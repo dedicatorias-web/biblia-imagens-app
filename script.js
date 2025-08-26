@@ -674,8 +674,6 @@ async function chamarAPIHuggingFace(modelUrl, prompt, parametros) {
     return await response.blob();
 }
 
-// ========== CONFIGURAÇÃO OPCIONAL DA CHAVE ==========
- //const HUGGING_FACE_API_KEY = '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';
 // ========== PROCESSAMENTO DA IMAGEM FINAL ==========
 async function processarImagemFinal(imageBlob) {
     return new Promise((resolve) => {
