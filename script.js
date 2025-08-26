@@ -1,4 +1,27 @@
 
+// Adicione temporariamente no script.js para verificar a chave:
+function verificarChaveDetalhada() {
+    const chave = getAPIKey();
+    console.log('🔍 === VERIFICAÇÃO DETALHADA DA CHAVE ===');
+    console.log('📏 Tamanho:', chave?.length);
+    console.log('🔑 Primeiros 10 caracteres:', chave?.substring(0, 10));
+    console.log('✅ Formato hf_:', chave?.startsWith('hf_'));
+    console.log('📅 Possível expiração: Chaves HuggingFace podem expirar');
+    
+    // Teste manual simplificado
+    fetch('https://huggingface.co/api/whoami', {
+        headers: { 'Authorization': `Bearer ${chave}` }
+    })
+    .then(r => r.json())
+    .then(data => console.log('👤 Info da chave:', data))
+    .catch(e => console.log('❌ Chave inválida:', e));
+}
+
+// Execute no console do navegador:
+// verificarChaveDetalhada()
+
+
+
 // ========== DEBUG TEMPORÁRIO - ADICIONE NO INÍCIO DA tentarGerarImagemIA ==========
 async function tentarGerarImagemIA(prompt, tema) {
     console.log('🔍 === DIAGNÓSTICO DA CHAVE ===');
