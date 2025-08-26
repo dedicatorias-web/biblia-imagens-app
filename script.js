@@ -1,3 +1,40 @@
+// ========== DEBUG - VERIFICAR ELEMENTOS ==========
+console.log('🔍 INICIANDO DEBUG...');
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 DOM carregado, verificando elementos...');
+    
+    // Verificar se elementos existem
+    const elementos = [
+        'temaEscolhido',
+        'versiculoTexto', 
+        'versiculoReferencia',
+        'gerarVersiculo',
+        'canvasImagem'
+    ];
+    
+    elementos.forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            console.log(`✅ ${id}: ENCONTRADO`);
+        } else {
+            console.error(`❌ ${id}: NÃO ENCONTRADO!`);
+        }
+    });
+    
+    // Verificar se a variável versiculos existe
+    if (typeof versiculos !== 'undefined') {
+        console.log('✅ Variável versiculos: DEFINIDA');
+        console.log('📚 Temas disponíveis:', Object.keys(versiculos));
+    } else {
+        console.error('❌ Variável versiculos: NÃO DEFINIDA!');
+    }
+    
+    // Verificar se versiculoAtual existe
+    console.log('🎯 versiculoAtual:', versiculoAtual);
+});
+
+
 // ========== CONFIGURAÇÕES DA APLICAÇÃO ==========
 let versiculos = {};
 let versiculoAtual = null;
