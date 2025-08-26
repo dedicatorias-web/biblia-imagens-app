@@ -1,5 +1,5 @@
 // ========== CONFIGURAÇÃO DA API ==========
-const HUGGING_FACE_API_KEY = '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'; // Substitua pela sua chave
+const HUGGING_FACE_API_KEY = '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'; // Substitua pela sua chave
 
 // Se não tiver chave, pode usar esta temporária (limitada):
 // const HUGGING_FACE_API_KEY = 'hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
