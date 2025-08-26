@@ -1,3 +1,98 @@
+
+// ========== DEBUG TEMPORÁRIO - ADICIONE NO INÍCIO DA tentarGerarImagemIA ==========
+async function tentarGerarImagemIA(prompt, tema) {
+    console.log('🔍 === DIAGNÓSTICO DA CHAVE ===');
+    
+    // 1. Verificar se a variável existe
+    console.log('📋 typeof HUGGING_FACE_API_KEY:', typeof HUGGING_FACE_API_KEY);
+    
+    // 2. Verificar valor (mascarado)
+    if (typeof HUGGING_FACE_API_KEY !== 'undefined') {
+        console.log('🔑 Chave definida:', HUGGING_FACE_API_KEY ? 
+            HUGGING_FACE_API_KEY.substring(0, 5) + '...' : 'VAZIA');
+        console.log('✅ Formato correto:', HUGGING_FACE_API_KEY?.startsWith('hf_'));
+        console.log('📏 Tamanho:', HUGGING_FACE_API_KEY?.length);
+    }
+    
+    // 3. Verificar CONFIG
+    if (typeof window !== 'undefined' && window.CONFIG) {
+        console.log('🌐 CONFIG existe:', !!window.CONFIG);
+        console.log('🔑 CONFIG.HUGGING_FACE_API_KEY:', window.CONFIG.HUGGING_FACE_API_KEY ? 
+            window.CONFIG.HUGGING_FACE_API_KEY.substring(0, 5) + '...' : 'VAZIA');
+    }
+    
+    // 4. Teste direto da API
+    await testarChaveAPI();
+    
+    console.log('🔍 === FIM DO DIAGNÓSTICO ===');
+    
+    // ... resto da função original
+}
+
+// ========== FUNÇÃO DE TESTE DIRETO ==========
+async function testarChaveAPI() {
+    console.log('🧪 Testando chave diretamente...');
+    
+    // Pegar a chave da forma mais direta possível
+    let chave = null;
+    
+    if (typeof HUGGING_FACE_API_KEY !== 'undefined' && HUGGING_FACE_API_KEY) {
+        chave = HUGGING_FACE_API_KEY;
+        console.log('📍 Origem: Variável HUGGING_FACE_API_KEY');
+    } else if (typeof window !== 'undefined' && window.CONFIG?.HUGGING_FACE_API_KEY) {
+        chave = window.CONFIG.HUGGING_FACE_API_KEY;
+        console.log('📍 Origem: window.CONFIG');
+    }
+    
+    if (!chave) {
+        console.log('❌ Nenhuma chave encontrada!');
+        return;
+    }
+    
+    console.log('🔑 Testando chave:', chave.substring(0, 8) + '...');
+    
+    try {
+        const response = await fetch('https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${chave}`
+            },
+            body: JSON.stringify({
+                inputs: "test",
+                parameters: { num_inference_steps: 1 }
+            })
+        });
+        
+        console.log('🌐 Status da resposta:', response.status);
+        console.log('📋 Headers:', Object.fromEntries(response.headers.entries()));
+        
+        if (response.status === 401) {
+            const text = await response.text();
+            console.log('❌ Erro 401 detalhado:', text);
+            
+            // Verificar tipo de erro 401
+            if (text.includes('Invalid username')) {
+                console.log('💡 PROBLEMA: Chave inválida ou corrompida');
+            } else if (text.includes('not authorized')) {
+                console.log('💡 PROBLEMA: Chave sem permissões');
+            } else {
+                console.log('💡 PROBLEMA: Erro de autenticação genérico');
+            }
+        } else if (response.status === 503) {
+            console.log('✅ CHAVE VÁLIDA! Modelo está carregando (503 é normal)');
+        } else if (response.status === 200) {
+            console.log('✅ CHAVE VÁLIDA! Resposta OK');
+        } else {
+            console.log('🤔 Status inesperado:', response.status);
+        }
+        
+    } catch (error) {
+        console.log('💥 Erro na requisição:', error.message);
+    }
+}
+
+
 // ========== CONFIGURAÇÃO DA API ==========
 const HUGGING_FACE_API_KEY = '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'; // Substitua pela sua chave
 
