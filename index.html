@@ -10,7 +10,26 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body>
+
+    <body>
+    <div class="api-setup" id="apiSetup">
+    <div class="api-card">
+        <h3>🔑 Configuração da IA (Primeira vez)</h3>
+        <p>Para gerar imagens, você precisa de uma chave gratuita do Hugging Face:</p>
+        <ol>
+            <li>Acesse <a href="https://huggingface.co/settings/tokens" target="_blank">huggingface.co/settings/tokens</a></li>
+            <li>Crie uma conta gratuita</li>
+            <li>Clique em "New token" → "Read"</li>
+            <li>Cole a chave abaixo:</li>
+        </ol>
+        <div class="api-input-group">
+            <input type="password" id="apiKey" placeholder="Cole sua chave do Hugging Face aqui">
+            <button id="salvarApi">Salvar</button>
+        </div>
+        <p class="api-note">Sua chave será salva apenas no seu navegador</p>
+    </div>
+</div>
+
     <div class="container">
         <header>
             <h1>📖 Versículos Bíblicos</h1>
@@ -18,37 +37,46 @@
         </header>
 
         <main>
-            <div class="controls">
-                <div class="control-group">
-                    <label for="temaEscolhido">Tema:</label>
-                    <select id="temaEscolhido">
-                        <option value="esperanca">✨ Esperança</option>
-                        <option value="amor">❤️ Amor</option>
-                        <option value="paz">🕊️ Paz</option>
-                        <option value="fe">🙏 Fé</option>
-                        <option value="sabedoria">🦉 Sabedoria</option>
-                        <option value="forca">💪 Força</option>
-                        <option value="protecao">🛡️ Proteção</option>
-                    </select>
-                </div>
-                
-                <div class="control-group">
-                    <label for="fonteEscolhida">Fonte:</label>
-                    <select id="fonteEscolhida">
-                        <option value="Inter">Inter</option>
-                        <option value="serif">Clássica</option>
-                        <option value="script">Elegante</option>
-                    </select>
-                </div>
+          <div class="controls">
+    <div class="control-group">
+        <label for="temaEscolhido">Tema:</label>
+        <select id="temaEscolhido">
+            <option value="esperanca">✨ Esperança</option>
+            <option value="amor">❤️ Amor</option>
+            <option value="paz">🕊️ Paz</option>
+            <option value="fe">🙏 Fé</option>
+            <option value="sabedoria">🦉 Sabedoria</option>
+            <option value="forca">💪 Força</option>
+            <option value="protecao">🛡️ Proteção</option>
+        </select>
+    </div>
+    
+    <div class="control-group">
+        <label for="qualidadeImagem">Qualidade da IA:</label>
+        <select id="qualidadeImagem">
+            <option value="rapida">Rápida</option>
+            <option value="media" selected>Média</option>
+            <option value="alta">Alta Qualidade</option>
+        </select>
+    </div>
 
-                <div class="control-group">
-                    <label for="tamanhoFonte">Tamanho:</label>
-                    <input type="range" id="tamanhoFonte" min="24" max="48" value="32">
-                    <span id="tamanhoDisplay">32px</span>
-                </div>
+    <div class="control-group">
+        <label for="posicaoTexto">Posição do Texto:</label>
+        <select id="posicaoTexto">
+            <option value="centro">Centro</option>
+            <option value="inferior" selected>Parte Inferior</option>
+            <option value="superior">Parte Superior</option>
+        </select>
+    </div>
 
-                <button id="gerarVersiculo">🎲 Novo Versículo</button>
-            </div>
+    <div class="control-group">
+        <label for="opacidadeFundo">Opacidade do Fundo:</label>
+        <input type="range" id="opacidadeFundo" min="0.3" max="0.9" step="0.1" value="0.7">
+        <span id="opacidadeDisplay">70%</span>
+    </div>
+
+    <button id="gerarVersiculo">🎲 Novo Versículo com IA</button>
+</div>
 
             <div class="image-container">
                 <canvas id="canvasImagem" width="800" height="600"></canvas>
