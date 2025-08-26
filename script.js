@@ -10,21 +10,32 @@ const modelosGratuitos = {
     alta: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
 };
 
-// Prompts otimizados para estilo barroco
+// Prompts MUITO ESPECÍFICOS para estilo barroco
 const promptsBarrocos = {
-    esperanca: "baroque oil painting masterpiece, divine golden light streaming through dramatic clouds, heavenly rays illuminating peaceful landscape, ornate religious symbolism, renaissance style, warm golden atmosphere, hope and faith, classical religious art, chiaroscuro lighting",
+    esperanca: "17th century baroque oil painting by Caravaggio style, dramatic chiaroscuro lighting, divine golden light from heaven, ornate church interior with marble columns, religious symbolism, dark shadows contrasted with brilliant light, renaissance masterpiece, oil on canvas texture, hope theme, heavenly rays, baroque religious art, classical composition, rich golden tones, dramatic lighting effects",
     
-    amor: "baroque religious painting, cherubic angels with golden wings, divine love theme, warm romantic lighting, ornate decorative elements, renaissance masterpiece style, heavenly atmosphere, classical composition, rich warm colors",
+    amor: "baroque painting in style of Peter Paul Rubens, cherubic angels with flowing robes, dramatic chiaroscuro, ornate golden frames, classical religious composition, divine love theme, rich warm colors, oil painting texture, 17th century masterpiece style, dramatic shadows and highlights, heavenly atmosphere, baroque religious symbolism",
     
-    paz: "baroque landscape painting, serene pastoral scene, soft divine light, white doves flying, olive branches, peaceful countryside, golden clouds, classical religious composition, tranquil atmosphere, renaissance style",
+    paz: "baroque landscape painting by Claude Lorrain style, serene pastoral scene, soft divine golden hour light, classical architecture in background, peaceful countryside, dramatic cloudy sky, 17th century oil painting technique, warm earth tones, classical composition, baroque style masterpiece, tranquil religious atmosphere",
     
-    fe: "baroque religious masterpiece, praying hands in divine light, magnificent cathedral interior, ornate gothic architecture, spiritual golden symbolism, classical religious art, dramatic lighting, faith theme",
+    fe: "baroque religious painting by Gian Lorenzo Bernini inspiration, dramatic lighting from above, ornate cathedral interior with golden details, spiritual symbolism, classical religious art, 17th century style, rich textures, dramatic chiaroscuro, faith and devotion theme, marble columns, ornate baroque architecture",
     
-    sabedoria: "baroque portrait style, ancient scrolls and books, wise symbols, warm candlelight, classical library setting, ornate architecture, renaissance masterpiece, wisdom theme, golden tones",
+    sabedoria: "baroque portrait painting by Johannes Vermeer style, scholar in classical study room, warm candlelight, ornate books and scrolls, 17th century interior, oil painting technique, rich golden tones, classical composition, wisdom and knowledge theme, dramatic lighting, baroque style masterpiece",
     
-    forca: "baroque heroic painting, powerful biblical figure, divine light through stormy clouds, ornate elements, dramatic composition, renaissance style, strength theme, classical religious art",
+    forca: "baroque heroic painting by Nicolas Poussin style, biblical strength theme, dramatic composition, classical figures, divine light through storm clouds, 17th century oil painting, rich textures, ornate elements, renaissance masterpiece technique, dramatic chiaroscuro lighting, powerful biblical imagery",
     
-    protecao: "baroque religious painting, guardian angel with spread wings, protective divine light, heavenly setting, ornate composition, warm celestial lighting, classical religious style, protection theme"
+    protecao: "baroque religious painting by Francesco Borromini inspiration, guardian angel with magnificent wings, protective divine light, ornate heavenly setting, 17th century religious art, classical baroque composition, warm celestial lighting, oil painting masterpiece, dramatic shadows and gold highlights"
+};
+
+// Filtros CSS para simular estilo barroco na imagem final
+const filtrosBarrocos = {
+    esperanca: "sepia(20%) saturate(140%) contrast(110%) brightness(105%) hue-rotate(15deg)",
+    amor: "sepia(15%) saturate(160%) contrast(115%) brightness(100%) hue-rotate(-10deg)",
+    paz: "sepia(25%) saturate(120%) contrast(105%) brightness(110%) hue-rotate(5deg)",
+    fe: "sepia(30%) saturate(130%) contrast(120%) brightness(95%) hue-rotate(25deg)",
+    sabedoria: "sepia(40%) saturate(110%) contrast(115%) brightness(90%) hue-rotate(20deg)",
+    forca: "sepia(10%) saturate(150%) contrast(125%) brightness(95%) hue-rotate(-5deg)",
+    protecao: "sepia(20%) saturate(135%) contrast(110%) brightness(105%) hue-rotate(10deg)"
 };
 
 // ========== INICIALIZAÇÃO ==========
@@ -32,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
     carregarVersiculos();
     configurarEventListeners();
     atualizarContadores();
-    mostrarToast('✅ App carregado! Usando Hugging Face gratuito.');
+    mostrarToast('✅ App carregado! Estilo barroco otimizado.');
 });
 
 // ========== EVENT LISTENERS ==========
@@ -85,64 +96,62 @@ async function gerarVersiculoComHF() {
 async function gerarImagemHuggingFace(tema) {
     const botaoGerar = document.getElementById('gerarVersiculo');
     botaoGerar.disabled = true;
-    botaoGerar.textContent = '🎨 Gerando arte...';
+    botaoGerar.textContent = '🎨 Criando arte barroca...';
     
     try {
-        mostrarProgresso('🎨 Preparando prompt artístico...', 10);
+        mostrarProgresso('🎨 Preparando prompt barroco...', 10);
         
         const qualidade = document.getElementById('qualidadeImagem').value;
         const modelUrl = modelosGratuitos[qualidade];
-        const prompt = criarPromptCompleto(tema);
+        const prompt = criarPromptBarrocoCompleto(tema);
         
-        mostrarProgresso('🤖 Conectando com Hugging Face...', 20);
+        console.log('Prompt Barroco:', prompt); // Para debug
+        
+        mostrarProgresso('🤖 Gerando com estilo dos mestres...', 20);
         
         // Primeira tentativa com modelo principal
         let imageBlob = await tentarGerarImagem(modelUrl, prompt, qualidade, tema);
         
         if (!imageBlob) {
-            mostrarProgresso('🔄 Tentando modelo alternativo...', 40);
+            mostrarProgresso('🔄 Tentando modelo clássico...', 40);
             // Segunda tentativa com modelo mais simples
             imageBlob = await tentarGerarImagem(modelosGratuitos.rapida, prompt, 'rapida', tema);
         }
         
         if (!imageBlob) {
-            mostrarProgresso('🎨 Usando gerador artístico local...', 60);
-            // Fallback para geração local
-            gerarImagemArtisticaLocal(tema);
-            mostrarToast('🎨 Usando modo artístico offline');
+            mostrarProgresso('🎨 Criando arte barroca local...', 60);
+            gerarImagemBarrocaLocal(tema);
+            mostrarToast('🎨 Arte barroca criada localmente');
             return;
         }
         
-        mostrarProgresso('✨ Finalizando obra...', 80);
+        mostrarProgresso('✨ Aplicando estilo barroco...', 80);
         
         imagemAtualBlob = imageBlob;
-        await criarImagemFinalComTexto(imageBlob);
+        await criarImagemBarrocaFinal(imageBlob, tema);
         
-        mostrarProgresso('🙏 Obra concluída!', 100);
+        mostrarProgresso('🙏 Obra-prima barroca concluída!', 100);
         
         setTimeout(() => {
-            const status = document.getElementById('generationStatus');
-            if (status) status.classList.add('hidden');
+            ocultarProgresso();
         }, 2000);
         
-        mostrarToast('✅ Imagem criada com sucesso!');
+        mostrarToast('✅ Obra barroca criada com sucesso!');
         
     } catch (error) {
         console.error('Erro na geração:', error);
-        mostrarToast('🎨 Usando modo artístico local', 'warning');
-        gerarImagemArtisticaLocal(tema);
+        mostrarToast('🎨 Criando arte barroca alternativa', 'warning');
+        gerarImagemBarrocaLocal(tema);
     } finally {
         botaoGerar.disabled = false;
-        botaoGerar.textContent = '🎨 Gerar Nova Arte';
-        
-        const status = document.getElementById('generationStatus');
-        if (status) status.classList.add('hidden');
+        botaoGerar.textContent = '🎨 Gerar Nova Obra Barroca';
+        ocultarProgresso();
     }
 }
 
 async function tentarGerarImagem(modelUrl, prompt, qualidade, tema) {
     try {
-        mostrarProgresso(`🤖 Gerando com ${qualidade}...`, 30);
+        mostrarProgresso(`🎨 Criando arte ${qualidade} estilo barroco...`, 30);
         
         const response = await fetch(modelUrl, {
             method: 'POST',
@@ -152,11 +161,11 @@ async function tentarGerarImagem(modelUrl, prompt, qualidade, tema) {
             body: JSON.stringify({
                 inputs: prompt,
                 parameters: {
-                    num_inference_steps: qualidade === 'alta' ? 30 : qualidade === 'media' ? 20 : 15,
-                    guidance_scale: 7.5,
+                    num_inference_steps: qualidade === 'alta' ? 35 : qualidade === 'media' ? 25 : 20,
+                    guidance_scale: 9.0, // Aumentado para melhor aderência ao prompt
                     width: qualidade === 'alta' ? 768 : 512,
                     height: qualidade === 'alta' ? 512 : 384,
-                    negative_prompt: "text, words, letters, watermark, signature, blurry, low quality, distorted, bad anatomy, cartoon, anime"
+                    negative_prompt: "modern, contemporary, minimalist, abstract, cartoon, anime, 3d render, photography, realistic photo, digital art, text, words, letters, watermark, signature, blurry, low quality, distorted, bad anatomy"
                 }
             })
         });
@@ -164,16 +173,11 @@ async function tentarGerarImagem(modelUrl, prompt, qualidade, tema) {
         if (response.ok) {
             const blob = await response.blob();
             
-            // Verificar se é uma imagem válida
             if (blob.size > 1000 && blob.type.includes('image')) {
-                mostrarProgresso('✅ Imagem gerada com sucesso!', 70);
+                mostrarProgresso('✅ Imagem barroca gerada!', 70);
                 return blob;
             }
         }
-        
-        // Se chegou aqui, houve erro
-        const errorText = await response.text();
-        console.log('Resposta do HF:', errorText);
         
         return null;
         
@@ -183,17 +187,19 @@ async function tentarGerarImagem(modelUrl, prompt, qualidade, tema) {
     }
 }
 
-function criarPromptCompleto(tema) {
+function criarPromptBarrocoCompleto(tema) {
     const promptBase = promptsBarrocos[tema];
     const palavrasChave = extrairPalavrasChave(versiculoAtual.texto);
     
-    return `${promptBase}, inspired by: ${palavrasChave}, masterpiece quality, highly detailed, 4k resolution, professional artwork, no text overlay, clean composition`;
+    // Prompt ainda mais específico para barroco
+    return `${promptBase}, biblical inspiration: ${palavrasChave}, 17th century oil painting masterpiece, baroque art style, classical religious painting, museum quality artwork, no text overlay, professional fine art, dramatic religious composition`;
 }
 
 function extrairPalavrasChave(texto) {
     const ignorar = [
         'para', 'porque', 'senhor', 'deus', 'seja', 'está', 'como', 'todo', 'mais', 'pelo', 'pela',
-        'uma', 'dos', 'das', 'com', 'não', 'que', 'ele', 'ela', 'seu', 'sua', 'nos', 'nas'
+        'uma', 'dos', 'das', 'com', 'não', 'que', 'ele', 'ela', 'seu', 'sua', 'nos', 'nas', 'por',
+        'este', 'esta', 'isso', 'aquele', 'aquela', 'muito', 'bem', 'assim', 'então'
     ];
     
     const palavrasImportantes = texto.toLowerCase()
@@ -206,7 +212,7 @@ function extrairPalavrasChave(texto) {
     return palavrasImportantes.join(', ');
 }
 
-async function criarImagemFinalComTexto(imageBlob) {
+async function criarImagemBarrocaFinal(imageBlob, tema) {
     return new Promise((resolve) => {
         const canvas = document.getElementById('canvasImagem');
         const ctx = canvas.getContext('2d');
@@ -215,9 +221,18 @@ async function criarImagemFinalComTexto(imageBlob) {
         
         const img = new Image();
         img.onload = function() {
+            // Aplicar filtro barroco ANTES de desenhar no canvas
+            ctx.filter = filtrosBarrocos[tema];
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            ctx.filter = 'none'; // Resetar filtro
+            
+            // Adicionar efeitos barrocos extras
+            adicionarEfeitosBarrocos(ctx, tema);
+            
+            // Adicionar overlay e texto
             adicionarOverlayTexto(ctx);
             adicionarTextoSobreImagem(ctx);
+            
             resolve();
         };
         
@@ -225,132 +240,218 @@ async function criarImagemFinalComTexto(imageBlob) {
     });
 }
 
-// ========== GERAÇÃO ARTÍSTICA LOCAL (FALLBACK) ==========
-function gerarImagemArtisticaLocal(tema) {
+function adicionarEfeitosBarrocos(ctx, tema) {
+    const canvas = ctx.canvas;
+    
+    // Adicionar vinheta barroca (escurecimento nas bordas)
+    const gradient = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, 0,
+        canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.8
+    );
+    
+    gradient.addColorStop(0, 'rgba(0,0,0,0)');
+    gradient.addColorStop(0.7, 'rgba(0,0,0,0)');
+    gradient.addColorStop(1, 'rgba(101,67,33,0.3)'); // Tom sépia escuro
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Adicionar textura de pintura a óleo
+    adicionarTexturaOleo(ctx);
+    
+    // Adicionar brilhos dourados característicos do barroco
+    adicionarBrilhosDourados(ctx, tema);
+}
+
+function adicionarTexturaOleo(ctx) {
+    const canvas = ctx.canvas;
+    ctx.save();
+    
+    // Criar padrão de pinceladas
+    ctx.globalAlpha = 0.08;
+    ctx.strokeStyle = '#8B4513'; // Marrom sépia
+    
+    for (let i = 0; i < 200; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const length = Math.random() * 20 + 5;
+        const angle = Math.random() * Math.PI * 2;
+        
+        ctx.lineWidth = Math.random() * 2 + 0.5;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length);
+        ctx.stroke();
+    }
+    
+    ctx.restore();
+}
+
+function adicionarBrilhosDourados(ctx, tema) {
+    const canvas = ctx.canvas;
+    ctx.save();
+    
+    // Brilhos dourados típicos do barroco
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = '#FFD700';
+    
+    const numBrilhos = tema === 'esperanca' ? 15 : tema === 'amor' ? 12 : 8;
+    
+    for (let i = 0; i < numBrilhos; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const tamanho = Math.random() * 8 + 3;
+        
+        // Criar brilho em forma de estrela
+        ctx.beginPath();
+        for (let j = 0; j < 8; j++) {
+            const angle = (j * Math.PI * 2) / 8;
+            const radius = j % 2 === 0 ? tamanho : tamanho * 0.5;
+            const px = x + Math.cos(angle) * radius;
+            const py = y + Math.sin(angle) * radius;
+            
+            if (j === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+        }
+        ctx.fill();
+    }
+    
+    ctx.restore();
+}
+
+// ========== GERAÇÃO BARROCA LOCAL (FALLBACK) ==========
+function gerarImagemBarrocaLocal(tema) {
     const canvas = document.getElementById('canvasImagem');
     const ctx = canvas.getContext('2d');
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Criar fundo artístico baseado no tema
-    criarFundoArtistico(ctx, tema);
+    // Criar fundo no estilo barroco
+    criarFundoBarroco(ctx, tema);
     
-    // Adicionar elementos decorativos
-    adicionarElementosDecorativos(ctx, tema);
+    // Adicionar elementos barrocos
+    adicionarElementosBarrocos(ctx, tema);
     
-    // Adicionar textura
-    adicionarTexturaArtistica(ctx);
+    // Adicionar efeitos de pintura a óleo
+    adicionarEfeitosBarrocos(ctx, tema);
     
     // Adicionar texto
     adicionarTextoSobreImagem(ctx);
 }
 
-function criarFundoArtistico(ctx, tema) {
+function criarFundoBarroco(ctx, tema) {
     const canvas = ctx.canvas;
     
-    const fundosArtisticos = {
+    const fundosBarrocos = {
         esperanca: () => {
-            // Gradiente radiante dourado
+            // Fundo dourado com chiaroscuro
             const grad = ctx.createRadialGradient(
-                canvas.width * 0.3, canvas.height * 0.3, 0,
-                canvas.width * 0.7, canvas.height * 0.7, canvas.width * 0.8
+                canvas.width * 0.3, canvas.height * 0.2, 0,
+                canvas.width * 0.7, canvas.height * 0.8, canvas.width
             );
-            grad.addColorStop(0, '#FFF8DC');
-            grad.addColorStop(0.3, '#FFD700');
-            grad.addColorStop(0.6, '#DAA520');
-            grad.addColorStop(1, '#B8860B');
+            grad.addColorStop(0, '#FFF8DC'); // Creme claro
+            grad.addColorStop(0.3, '#F0E68C'); // Khaki claro
+            grad.addColorStop(0.6, '#DAA520'); // Goldenrod
+            grad.addColorStop(0.8, '#8B6914'); // Dark goldenrod
+            grad.addColorStop(1, '#654321'); // Dark brown
             return grad;
         },
         
         amor: () => {
-            // Gradiente romântico
-            const grad = ctx.createRadialGradient(
-                canvas.width / 2, canvas.height / 2, 0,
-                canvas.width / 2, canvas.height / 2, canvas.width * 0.6
-            );
-            grad.addColorStop(0, '#FFE4E1');
-            grad.addColorStop(0.4, '#FFB6C1');
-            grad.addColorStop(0.7, '#FF69B4');
-            grad.addColorStop(1, '#DC143C');
+            // Tons rosados e dourados barrocos
+            const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            grad.addColorStop(0, '#FFF0F5'); // Lavender blush
+            grad.addColorStop(0.3, '#FFE4E1'); // Misty rose
+            grad.addColorStop(0.6, '#CD853F'); // Peru
+            grad.addColorStop(0.9, '#8B4513'); // Saddle brown
+            grad.addColorStop(1, '#2F1B14'); // Dark brown
             return grad;
         },
         
         paz: () => {
-            // Gradiente sereno
+            // Azuis clássicos barrocos
             const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            grad.addColorStop(0, '#F0F8FF');
-            grad.addColorStop(0.3, '#E0F6FF');
-            grad.addColorStop(0.7, '#87CEEB');
-            grad.addColorStop(1, '#4682B4');
+            grad.addColorStop(0, '#F0F8FF'); // Alice blue
+            grad.addColorStop(0.4, '#B0C4DE'); // Light steel blue
+            grad.addColorStop(0.7, '#4682B4'); // Steel blue
+            grad.addColorStop(0.9, '#2F4F4F'); // Dark slate gray
+            grad.addColorStop(1, '#191970'); // Midnight blue
             return grad;
         },
         
         fe: () => {
-            // Gradiente espiritual
+            // Púrpuras e dourados reais
             const grad = ctx.createRadialGradient(
-                canvas.width * 0.2, canvas.height * 0.2, 0,
-                canvas.width * 0.8, canvas.height * 0.8, canvas.width
+                canvas.width * 0.5, canvas.height * 0.3, 0,
+                canvas.width * 0.5, canvas.height * 0.7, canvas.width * 0.6
             );
-            grad.addColorStop(0, '#E6E6FA');
-            grad.addColorStop(0.4, '#DDA0DD');
-            grad.addColorStop(0.7, '#9370DB');
-            grad.addColorStop(1, '#4B0082');
+            grad.addColorStop(0, '#E6E6FA'); // Lavender
+            grad.addColorStop(0.4, '#DDA0DD'); // Plum
+            grad.addColorStop(0.7, '#8B008B'); // Dark magenta
+            grad.addColorStop(0.9, '#4B0082'); // Indigo
+            grad.addColorStop(1, '#2E0854'); // Dark purple
             return grad;
         },
         
         sabedoria: () => {
-            // Gradiente sábio
+            // Tons terrosos e dourados
             const grad = ctx.createLinearGradient(canvas.width, 0, 0, canvas.height);
-            grad.addColorStop(0, '#FDF5E6');
-            grad.addColorStop(0.3, '#F5DEB3');
-            grad.addColorStop(0.7, '#DEB887');
-            grad.addColorStop(1, '#8B7355');
+            grad.addColorStop(0, '#FDF5E6'); // Old lace
+            grad.addColorStop(0.3, '#DEB887'); // Burlywood
+            grad.addColorStop(0.6, '#CD853F'); // Peru
+            grad.addColorStop(0.8, '#8B4513'); // Saddle brown
+            grad.addColorStop(1, '#3D2914'); // Dark brown
             return grad;
         },
         
         forca: () => {
-            // Gradiente forte
+            // Vermelhos dramáticos barrocos
             const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-            grad.addColorStop(0, '#FFE4E1');
-            grad.addColorStop(0.3, '#FA8072');
-            grad.addColorStop(0.7, '#DC143C');
-            grad.addColorStop(1, '#8B0000');
+            grad.addColorStop(0, '#FFE4E1'); // Misty rose
+            grad.addColorStop(0.3, '#CD5C5C'); // Indian red
+            grad.addColorStop(0.6, '#B22222'); // Fire brick
+            grad.addColorStop(0.8, '#800000'); // Maroon
+            grad.addColorStop(1, '#2F0000'); // Dark red
             return grad;
         },
         
         protecao: () => {
-            // Gradiente protetor
+            // Verdes nobres barrocos
             const grad = ctx.createRadialGradient(
                 canvas.width / 2, canvas.height * 0.3, 0,
                 canvas.width / 2, canvas.height * 0.7, canvas.width * 0.5
             );
-            grad.addColorStop(0, '#F0FFF0');
-            grad.addColorStop(0.4, '#98FB98');
-            grad.addColorStop(0.7, '#32CD32');
-            grad.addColorStop(1, '#006400');
+            grad.addColorStop(0, '#F0FFF0'); // Honeydew
+            grad.addColorStop(0.4, '#90EE90'); // Light green
+            grad.addColorStop(0.7, '#228B22'); // Forest green
+            grad.addColorStop(0.9, '#006400'); // Dark green
+            grad.addColorStop(1, '#013220'); // Very dark green
             return grad;
         }
     };
     
-    const criarFundo = fundosArtisticos[tema] || fundosArtisticos.esperanca;
+    const criarFundo = fundosBarrocos[tema] || fundosBarrocos.esperanca;
     ctx.fillStyle = criarFundo();
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-function adicionarElementosDecorativos(ctx, tema) {
+function adicionarElementosBarrocos(ctx, tema) {
     ctx.save();
-    ctx.globalAlpha = 0.15;
+    ctx.globalAlpha = 0.2;
     
-    const decoracoes = {
+    const elementosBarrocos = {
         esperanca: () => {
-            // Raios de luz dourados
+            // Raios divinos barrocos
             ctx.strokeStyle = '#FFD700';
-            ctx.lineWidth = 3;
-            const centerX = ctx.canvas.width / 2;
-            const centerY = ctx.canvas.height / 2;
+            ctx.lineWidth = 4;
+            ctx.shadowColor = '#FFA500';
+            ctx.shadowBlur = 10;
             
-            for (let i = 0; i < 12; i++) {
-                const angulo = (i * 30) * Math.PI / 180;
+            const centerX = ctx.canvas.width / 2;
+            const centerY = ctx.canvas.height * 0.3;
+            
+            for (let i = 0; i < 16; i++) {
+                const angulo = (i * 22.5) * Math.PI / 180;
                 const raio = Math.min(ctx.canvas.width, ctx.canvas.height) * 0.4;
                 
                 ctx.beginPath();
@@ -364,157 +465,65 @@ function adicionarElementosDecorativos(ctx, tema) {
         },
         
         amor: () => {
-            // Corações decorativos
-            ctx.fillStyle = '#FFB6C1';
-            for (let i = 0; i < 15; i++) {
+            // Ornamentos de amor barrocos
+            ctx.fillStyle = '#CD853F';
+            ctx.strokeStyle = '#8B4513';
+            ctx.lineWidth = 2;
+            
+            for (let i = 0; i < 12; i++) {
                 const x = Math.random() * ctx.canvas.width;
                 const y = Math.random() * ctx.canvas.height;
-                desenharCoracao(ctx, x, y, 20 + Math.random() * 15);
+                desenharOrnamentoBarroco(ctx, x, y, 25);
             }
         },
         
         paz: () => {
-            // Círculos concêntricos
-            ctx.strokeStyle = '#87CEEB';
-            ctx.lineWidth = 2;
-            const centerX = ctx.canvas.width / 2;
-            const centerY = ctx.canvas.height / 2;
-            
-            for (let i = 1; i <= 6; i++) {
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, i * 50, 0, Math.PI * 2);
-                ctx.stroke();
-            }
-        },
-        
-        fe: () => {
-            // Cruzes ornamentais
-            ctx.strokeStyle = '#9370DB';
-            ctx.lineWidth = 4;
-            for (let i = 0; i < 8; i++) {
-                const x = Math.random() * ctx.canvas.width;
-                const y = Math.random() * ctx.canvas.height;
-                desenharCruz(ctx, x, y, 30);
-            }
-        },
-        
-        sabedoria: () => {
-            // Símbolos de sabedoria
-            ctx.fillStyle = '#DEB887';
-            for (let i = 0; i < 10; i++) {
-                const x = Math.random() * ctx.canvas.width;
-                const y = Math.random() * ctx.canvas.height;
-                desenharLivro(ctx, x, y, 25);
-            }
-        },
-        
-        forca: () => {
-            // Raios de força
-            ctx.strokeStyle = '#DC143C';
+            // Ondas barrocas
+            ctx.strokeStyle = '#4682B4';
             ctx.lineWidth = 3;
-            for (let i = 0; i < 10; i++) {
-                const x = Math.random() * ctx.canvas.width;
-                const y = Math.random() * ctx.canvas.height;
-                desenharRaio(ctx, x, y, 40);
-            }
-        },
-        
-        protecao: () => {
-            // Escudos protetores
-            ctx.fillStyle = '#32CD32';
-            for (let i = 0; i < 6; i++) {
-                const x = Math.random() * ctx.canvas.width;
-                const y = Math.random() * ctx.canvas.height;
-                desenharEscudo(ctx, x, y, 35);
+            ctx.shadowColor = '#87CEEB';
+            ctx.shadowBlur = 8;
+            
+            for (let y = 100; y < ctx.canvas.height; y += 80) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                for (let x = 0; x < ctx.canvas.width; x += 40) {
+                    ctx.quadraticCurveTo(x + 20, y - 15, x + 40, y);
+                }
+                ctx.stroke();
             }
         }
     };
     
-    const decoracao = decoracoes[tema] || decoracoes.esperanca;
-    decoracao();
+    const elemento = elementosBarrocos[tema] || elementosBarrocos.esperanca;
+    elemento();
     
     ctx.restore();
 }
 
-function adicionarTexturaArtistica(ctx) {
-    ctx.save();
-    ctx.globalAlpha = 0.1;
-    
-    // Textura pontilhada dourada
-    ctx.fillStyle = '#FFD700';
-    for (let i = 0; i < 300; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        const raio = Math.random() * 3 + 1;
-        
-        ctx.beginPath();
-        ctx.arc(x, y, raio, 0, Math.PI * 2);
-        ctx.fill();
-    }
-    
-    ctx.restore();
-}
-
-// ========== FUNÇÕES DE DESENHO ==========
-function desenharCoracao(ctx, x, y, size) {
+function desenharOrnamentoBarroco(ctx, x, y, size) {
     ctx.save();
     ctx.translate(x, y);
-    ctx.beginPath();
-    ctx.arc(-size/4, -size/4, size/4, 0, Math.PI * 2);
-    ctx.arc(size/4, -size/4, size/4, 0, Math.PI * 2);
-    ctx.moveTo(0, size/4);
-    ctx.lineTo(-size/2, -size/8);
-    ctx.lineTo(size/2, -size/8);
-    ctx.lineTo(0, size/4);
-    ctx.fill();
-    ctx.restore();
-}
-
-function desenharCruz(ctx, x, y, size) {
-    ctx.beginPath();
-    ctx.moveTo(x, y - size);
-    ctx.lineTo(x, y + size);
-    ctx.moveTo(x - size/2, y - size/2);
-    ctx.lineTo(x + size/2, y - size/2);
-    ctx.stroke();
-}
-
-function desenharLivro(ctx, x, y, size) {
-    ctx.fillRect(x - size/2, y - size/3, size, size * 0.7);
-    ctx.strokeRect(x - size/2, y - size/3, size, size * 0.7);
     
-    // Páginas
-    for (let i = 1; i <= 3; i++) {
-        ctx.beginPath();
-        ctx.moveTo(x - size/2 + 5, y - size/3 + i * 5);
-        ctx.lineTo(x + size/2 - 5, y - size/3 + i * 5);
-        ctx.stroke();
+    // Ornamento barroco complexo
+    ctx.beginPath();
+    
+    // Forma central
+    ctx.arc(0, 0, size/3, 0, Math.PI * 2);
+    
+    // Pétalas ornamentais
+    for (let i = 0; i < 8; i++) {
+        const angle = (i * Math.PI * 2) / 8;
+        const px = Math.cos(angle) * size/2;
+        const py = Math.sin(angle) * size/2;
+        
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(px * 0.7, py * 0.7, px, py);
     }
-}
-
-function desenharRaio(ctx, x, y, size) {
-    ctx.beginPath();
-    ctx.moveTo(x, y - size);
-    ctx.lineTo(x - size/3, y - size/3);
-    ctx.lineTo(x + size/6, y - size/3);
-    ctx.lineTo(x - size/3, y + size/3);
-    ctx.lineTo(x + size/3, y - size/6);
-    ctx.lineTo(x - size/6, y + size/3);
-    ctx.lineTo(x, y - size);
-    ctx.stroke();
-}
-
-function desenharEscudo(ctx, x, y, size) {
-    ctx.beginPath();
-    ctx.moveTo(x, y - size);
-    ctx.lineTo(x - size/2, y - size/2);
-    ctx.lineTo(x - size/2, y + size/3);
-    ctx.lineTo(x, y + size);
-    ctx.lineTo(x + size/2, y + size/3);
-    ctx.lineTo(x + size/2, y - size/2);
-    ctx.closePath();
+    
     ctx.fill();
     ctx.stroke();
+    ctx.restore();
 }
 
 // ========== TEXTO E INTERFACE ==========
@@ -541,21 +550,22 @@ function adicionarOverlayTexto(ctx) {
             break;
     }
     
+    // Overlay com tom sépia barroco
     const gradient = ctx.createLinearGradient(0, overlayY, 0, overlayY + overlayHeight);
     
     if (posicao === 'superior') {
-        gradient.addColorStop(0, `rgba(0,0,0,${opacidade})`);
-        gradient.addColorStop(0.7, `rgba(0,0,0,${opacidade * 0.3})`);
+        gradient.addColorStop(0, `rgba(101,67,33,${opacidade * 0.8})`); // Tom sépia
+        gradient.addColorStop(0.7, `rgba(101,67,33,${opacidade * 0.3})`);
         gradient.addColorStop(1, 'rgba(0,0,0,0)');
     } else if (posicao === 'inferior') {
         gradient.addColorStop(0, 'rgba(0,0,0,0)');
-        gradient.addColorStop(0.3, `rgba(0,0,0,${opacidade * 0.3})`);
-        gradient.addColorStop(1, `rgba(0,0,0,${opacidade})`);
+        gradient.addColorStop(0.3, `rgba(101,67,33,${opacidade * 0.3})`);
+        gradient.addColorStop(1, `rgba(101,67,33,${opacidade * 0.8})`);
     } else {
-        gradient.addColorStop(0, `rgba(0,0,0,${opacidade * 0.2})`);
-        gradient.addColorStop(0.3, `rgba(0,0,0,${opacidade})`);
-        gradient.addColorStop(0.7, `rgba(0,0,0,${opacidade})`);
-        gradient.addColorStop(1, `rgba(0,0,0,${opacidade * 0.2})`);
+        gradient.addColorStop(0, `rgba(101,67,33,${opacidade * 0.3})`);
+        gradient.addColorStop(0.3, `rgba(101,67,33,${opacidade * 0.8})`);
+        gradient.addColorStop(0.7, `rgba(101,67,33,${opacidade * 0.8})`);
+        gradient.addColorStop(1, `rgba(101,67,33,${opacidade * 0.3})`);
     }
     
     ctx.fillStyle = gradient;
@@ -566,12 +576,15 @@ function adicionarTextoSobreImagem(ctx) {
     const canvas = ctx.canvas;
     const posicao = document.getElementById('posicaoTexto').value;
     
-    ctx.fillStyle = 'white';
+    // Texto com estilo barroco (dourado)
+    ctx.fillStyle = '#FFD700'; // Dourado barroco
+    ctx.strokeStyle = '#8B4513'; // Contorno marrom
+    ctx.lineWidth = 2;
     ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0,0,0,0.9)';
-    ctx.shadowBlur = 8;
-    ctx.shadowOffsetX = 3;
-    ctx.shadowOffsetY = 3;
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetX = 4;
+    ctx.shadowOffsetY = 4;
     
     let yBase;
     switch(posicao) {
@@ -587,112 +600,27 @@ function adicionarTextoSobreImagem(ctx) {
             break;
     }
     
-    ctx.font = 'bold 32px "Times New Roman", Georgia, serif';
+    // Fonte mais ornamental para o estilo barroco
+    ctx.font = 'bold 34px "Times New Roman", Georgia, serif';
     const texto = versiculoAtual.texto;
     
     const linhas = quebrarTextoInteligente(ctx, texto, canvas.width - 120);
     
-    const alturaLinha = 38;
+    const alturaLinha = 40;
     const alturaTotal = linhas.length * alturaLinha;
     const yInicial = yBase - (alturaTotal / 2);
     
+    // Desenhar texto com contorno dourado
     linhas.forEach((linha, index) => {
-        ctx.fillText(linha, canvas.width / 2, yInicial + (index * alturaLinha));
+        const y = yInicial + (index * alturaLinha);
+        ctx.strokeText(linha, canvas.width / 2, y);
+        ctx.fillText(linha, canvas.width / 2, y);
     });
     
-    ctx.font = 'italic bold 26px "Times New Roman", Georgia, serif';
-    ctx.shadowBlur = 6;
-    const yReferencia = yInicial + alturaTotal + 40;
-    ctx.fillText(`— ${versiculoAtual.referencia}`, canvas.width / 2, yReferencia);
-    
-    ctx.shadowColor = 'transparent';
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-}
-
-function quebrarTextoInteligente(ctx, texto, larguraMax) {
-    const palavras = texto.split(' ');
-    const linhas = [];
-    let linhaAtual = '';
-    
-    for (let palavra of palavras) {
-        const testeLinha = linhaAtual + (linhaAtual ? ' ' : '') + palavra;
-        const largura = ctx.measureText(testeLinha).width;
-        
-        if (largura > larguraMax && linhaAtual) {
-            linhas.push(linhaAtual.trim());
-            linhaAtual = palavra;
-        } else {
-            linhaAtual = testeLinha;
-        }
-    }
-    
-    if (linhaAtual) {
-        linhas.push(linhaAtual.trim());
-    }
-    
-    return linhas;
-}
-
-function mostrarProgresso(mensagem, porcentagem) {
-    let status = document.getElementById('generationStatus');
-    
-    if (!status) {
-        status = document.createElement('div');
-        status.id = 'generationStatus';
-        status.className = 'generation-status';
-        status.innerHTML = `
-            <div class="progress-bar">
-                <div class="progress-fill"></div>
-            </div>
-            <div class="status-text"></div>
-        `;
-        
-        const container = document.querySelector('.image-container');
-        container.insertBefore(status, document.getElementById('canvasImagem'));
-    }
-    
-    status.classList.remove('hidden');
-    status.querySelector('.status-text').textContent = mensagem;
-    status.querySelector('.progress-fill').style.width = porcentagem + '%';
-}
-
-// ========== FUNCIONALIDADES DE COMPARTILHAMENTO ==========
-function baixarImagem() {
-    if (!versiculoAtual) {
-        mostrarToast('❌ Nenhuma imagem para baixar', 'error');
-        return;
-    }
-    
-    const canvas = document.getElementById('canvasImagem');
-    const link = document.createElement('a');
-    
-    const nomeArquivo = `versiculo-${versiculoAtual.referencia
-        .replace(/[^a-zA-Z0-9]/g, '_')
-        .toLowerCase()}-${Date.now()}.png`;
-    
-    link.download = nomeArquivo;
-    link.href = canvas.toDataURL('image/png', 1.0);
-    link.click();
-    
-    mostrarToast('💾 Imagem baixada!');
-}
-
-function compartilharWhatsApp() {
-    if (!versiculoAtual) return;
-    
-    const texto = `🙏 *${versiculoAtual.referencia}*\n\n"_${versiculoAtual.texto}_"\n\n✨ Criado em: ${window.location.href}`;
-    const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
-    
-    window.open(url, '_blank');
-    mostrarToast('📱 Abrindo WhatsApp...');
-}
-
-function copiarTexto() {
-    if (!versiculoAtual) return;
-    
-    const texto = `"${versiculoAtual.texto}"\n\n— ${versiculoAtual.referencia}`;
-    
-    if (navigator
+    // Referência com estilo mais ornamental
+    ctx.font = 'italic bold 28px "Times New Roman", Georgia, serif';
+    ctx.shadowBlur = 8;
+    const yReferencia = yInicial + alturaTotal + 45;
+    ctx.strokeText(`— ${versiculoAtual.referencia}`, canvas.width / 2, yReferencia);
+    ctx.fill
 \<Streaming stoppped because the conversation grew too long for this model\>
