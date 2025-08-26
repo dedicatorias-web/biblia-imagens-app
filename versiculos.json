@@ -7,6 +7,14 @@
     {
       "texto": "Mas os que esperam no Senhor renovarão as forças, subirão com asas como águias; correrão, e não se cansarão; caminharão, e não se fatigarão.",
       "referencia": "Isaías 40:31"
+    },
+    {
+      "texto": "Lança sobre o Senhor o teu cuidado, e ele te susterá; nunca permitirá que o justo seja abalado.",
+      "referencia": "Salmos 55:22"
+    },
+    {
+      "texto": "E a nossa esperança a respeito de vós está firme, sabendo que, como sois participantes das aflições, assim o sereis também da consolação.",
+      "referencia": "2 Coríntios 1:7"
     }
   ],
   "amor": [
@@ -17,18 +25,72 @@
     {
       "texto": "O amor é sofredor, é benigno; o amor não é invejoso; o amor não trata com leviandade, não se ensoberbece.",
       "referencia": "1 Coríntios 13:4"
+    },
+    {
+      "texto": "Nisto conhecemos o amor: que ele deu a sua vida por nós, e nós devemos dar a vida pelos irmãos.",
+      "referencia": "1 João 3:16"
+    },
+    {
+      "texto": "O perfeito amor lança fora o temor; porque o temor tem consigo a pena, e o que teme não é perfeito em amor.",
+      "referencia": "1 João 4:18"
     }
   ],
   "paz": [
     {
       "texto": "Deixo-vos a paz, a minha paz vos dou; não vo-la dou como o mundo a dá. Não se turbe o vosso coração, nem se atemorize.",
       "referencia": "João 14:27"
+    },
+    {
+      "texto": "E a paz de Deus, que excede todo o entendimento, guardará os vossos corações e os vossos sentimentos em Cristo Jesus.",
+      "referencia": "Filipenses 4:7"
+    },
+    {
+      "texto": "Tu conservarás em paz aquele cuja mente está firme em ti; porque ele confia em ti.",
+      "referencia": "Isaías 26:3"
     }
   ],
   "fe": [
     {
       "texto": "Ora, a fé é o firme fundamento das coisas que se esperam, e a prova das coisas que se não veem.",
       "referencia": "Hebreus 11:1"
+    },
+    {
+      "texto": "E Jesus disse-lhe: Se tu podes crer, tudo é possível ao que crê.",
+      "referencia": "Marcos 9:23"
+    },
+    {
+      "texto": "Porque andamos por fé, e não por vista.",
+      "referencia": "2 Coríntios 5:7"
+    }
+  ],
+  "sabedoria": [
+    {
+      "texto": "O temor do Senhor é o princípio da sabedoria, e o conhecimento do Santo a prudência.",
+      "referencia": "Provérbios 9:10"
+    },
+    {
+      "texto": "Confia no Senhor de todo o teu coração, e não te estribes no teu próprio entendimento.",
+      "referencia": "Provérbios 3:5"
+    }
+  ],
+  "forca": [
+    {
+      "texto": "Posso todas as coisas em Cristo que me fortalece.",
+      "referencia": "Filipenses 4:13"
+    },
+    {
+      "texto": "O Senhor é a minha força e o meu escudo; nele confiou o meu coração, e fui socorrido.",
+      "referencia": "Salmos 28:7"
+    }
+  ],
+  "protecao": [
+    {
+      "texto": "O que habita no esconderijo do Altíssimo, à sombra do Onipotente descansará.",
+      "referencia": "Salmos 91:1"
+    },
+    {
+      "texto": "Ainda que eu andasse pelo vale da sombra da morte, não temeria mal algum, porque tu estás comigo.",
+      "referencia": "Salmos 23:4"
     }
   ]
 }
