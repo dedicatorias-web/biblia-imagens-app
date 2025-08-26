@@ -629,52 +629,242 @@ function classifyError(errorMessage) {
     }
 }
 
-// ========== FUNÇÃO HUGGING FACE OTIMIZADA ==========
-async function chamarAPIHuggingFace(modelUrl, prompt, parametros) {
-    const headers = {
-        'Content-Type': 'application/json'
-    };
-    
-    // Chave opcional
-    if (typeof HUGGING_FACE_API_KEY !== 'undefined' && HUGGING_FACE_API_KEY && HUGGING_FACE_API_KEY !== 'SUA_CHAVE_AQUI') {
-        headers['Authorization'] = `Bearer ${HUGGING_FACE_API_KEY}`;
+
+// ========== CONFIGURAÇÃO SEGURA ==========
+function getAPIKey() {
+    // Tentar várias fontes de configuração
+    if (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.HUGGING_FACE_API_KEY) {
+        console.log('🔑 Usando chave do CONFIG (segura)');
+        return window.CONFIG.HUGGING_FACE_API_KEY;
     }
     
+    // Fallback para desenvolvimento local
+    if (typeof HUGGING_FACE_API_KEY !== 'undefined' && HUGGING_FACE_API_KEY !== 'SUA_CHAVE_AQUI') {
+        console.log('🔑 Usando chave local (desenvolvimento)');
+        return HUGGING_FACE_API_KEY;
+    }
+    
+    console.log('🚫 Nenhuma chave configurada');
+    return null;
+}
+
+// ========== FUNÇÃO SEGURA PARA CHAMAR API ==========
+async function chamarAPIHuggingFaceSeguro(modelUrl, prompt, parametros) {
+    const apiKey = getAPIKey();
+    
+    if (!apiKey) {
+        throw new Error('Chave API não configurada');
+    }
+    
+    const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+    };
+    
+    // Resto da implementação...
     const response = await fetch(modelUrl, {
         method: 'POST',
         headers: headers,
         body: JSON.stringify({
             inputs: prompt,
-            parameters: {
-                num_inference_steps: parametros.steps,
-                guidance_scale: parametros.guidance_scale,
-                width: parametros.width,
-                height: parametros.height,
-                negative_prompt: "blurry, bad quality, distorted, ugly, text, watermark, signature, low resolution"
-            }
+            parameters: parametros
         })
     });
     
     if (!response.ok) {
         const errorText = await response.text();
-        let errorMsg = `HTTP ${response.status}`;
-        
-        try {
-            const errorObj = JSON.parse(errorText);
-            if (errorObj.error) {
-                errorMsg += `: ${errorObj.error}`;
-            }
-        } catch {
-            errorMsg += `: ${errorText}`;
-        }
-        
-        throw new Error(errorMsg);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
     
     return await response.blob();
 }
 
-// ========== PROCESSAMENTO DA IMAGEM FINAL ==========
+
+
+
+// ========== FUNÇÃO HUGGING FACE OTIMIZADA ==========
+
+
+// ========== FUNÇÃO PRINCIPAL (MANTÉM O NOME) ==========
+async function chamarAPIHuggingFace(modelUrl, prompt, parametros) {
+    // Redirecionar para a versão segura
+    return await chamarAPIHuggingFaceSeguro(modelUrl, prompt, parametros);
+}
+
+// ========== FUNÇÃO SEGURA (NOVA IMPLEMENTAÇÃO) ==========
+async function chamarAPIHuggingFaceSeguro(modelUrl, prompt, parametros) {
+    console.log(`🔄 Chamando: ${modelUrl.split('/').pop()}`);
+    
+    // Obter chave de forma segura
+    const apiKey = getAPIKey();
+    
+    if (!apiKey) {
+        throw new Error('🔑 Chave API não configurada ou inválida');
+    }
+    
+    // Configurar headers
+    const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'User-Agent': 'BibleAI/1.0'
+    };
+    
+    // Preparar parâmetros seguros
+    const parametrosSeguro = {
+        num_inference_steps: parametros.steps || 15,
+        guidance_scale: parametros.guidance_scale || 7.5,
+        width: parametros.width || 640,
+        height: parametros.height || 480,
+        negative_prompt: "blurry, bad quality, distorted, ugly, text, watermark, signature, low resolution"
+    };
+    
+    try {
+        const response = await fetch(modelUrl, {
+            method: 'POST',
+            headers: headers,
+            body: JSON.stringify({
+                inputs: prompt,
+                parameters: parametrosSeguro
+            })
+        });
+        
+        console.log(`📡 Status: ${response.status} | Modelo: ${modelUrl.split('/').pop()}`);
+        
+        // Tratamento detalhado de erros
+        if (!response.ok) {
+            const errorText = await response.text();
+            const errorInfo = await analisarErroHuggingFace(response.status, errorText, modelUrl);
+            throw new Error(errorInfo.message);
+        }
+        
+        const blob = await response.blob();
+        
+        // Validar resposta
+        if (blob.size < 1000) {
+            throw new Error('🚫 Resposta muito pequena, provável erro no modelo');
+        }
+        
+        console.log(`✅ Sucesso: ${blob.size} bytes | ${modelUrl.split('/').pop()}`);
+        return blob;
+        
+    } catch (error) {
+        console.log(`❌ Erro em ${modelUrl.split('/').pop()}: ${error.message}`);
+        throw error;
+    }
+}
+
+// ========== FUNÇÃO PARA ANALISAR ERROS ==========
+async function analisarErroHuggingFace(status, errorText, modelUrl) {
+    let errorObj;
+    try {
+        errorObj = JSON.parse(errorText);
+    } catch {
+        errorObj = { error: errorText };
+    }
+    
+    const modelName = modelUrl.split('/').pop();
+    
+    switch (status) {
+        case 401:
+            if (errorText.includes('Invalid username')) {
+                return {
+                    type: 'invalid_key',
+                    message: '🔐 Chave API inválida ou expirada',
+                    suggestion: 'Verifique se a chave está correta'
+                };
+            }
+            return {
+                type: 'unauthorized', 
+                message: '🚫 Acesso não autorizado ao modelo',
+                suggestion: 'Modelo pode ser privado ou chave sem permissões'
+            };
+            
+        case 403:
+            return {
+                type: 'forbidden',
+                message: '🔒 Acesso negado ao modelo', 
+                suggestion: 'Modelo pode estar restrito'
+            };
+            
+        case 503:
+            return {
+                type: 'loading',
+                message: `⏳ Modelo ${modelName} está carregando`,
+                suggestion: 'Aguarde alguns segundos'
+            };
+            
+        case 429:
+            return {
+                type: 'rate_limit',
+                message: '⏰ Limite de requisições excedido',
+                suggestion: 'Aguarde antes de tentar novamente'
+            };
+            
+        case 400:
+            return {
+                type: 'bad_request',
+                message: '🚫 Parâmetros inválidos',
+                suggestion: 'Verifique o prompt e parâmetros'
+            };
+            
+        case 500:
+            return {
+                type: 'server_error',
+                message: `💥 Erro interno do modelo ${modelName}`,
+                suggestion: 'Tente outro modelo'
+            };
+            
+        default:
+            return {
+                type: 'unknown',
+                message: `❓ Erro ${status}: ${errorObj.error || errorText}`,
+                suggestion: 'Erro desconhecido'
+            };
+    }
+}
+
+// ========== FUNÇÃO PARA OBTER CHAVE SEGURA ==========
+function getAPIKey() {
+    // 1. Tentar CONFIG do GitHub Actions/Netlify/Vercel
+    if (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.HUGGING_FACE_API_KEY) {
+        const key = window.CONFIG.HUGGING_FACE_API_KEY;
+        if (key && key !== '{{ HUGGING_FACE_API_KEY }}' && key.startsWith('hf_')) {
+            console.log('🔑 Usando chave do CONFIG (produção segura)');
+            return key;
+        }
+    }
+    
+    // 2. Tentar variável local (desenvolvimento)
+    if (typeof HUGGING_FACE_API_KEY !== 'undefined' && 
+        HUGGING_FACE_API_KEY && 
+        HUGGING_FACE_API_KEY !== 'SUA_CHAVE_AQUI' && 
+        HUGGING_FACE_API_KEY.startsWith('hf_')) {
+        console.log('🔑 Usando chave local (desenvolvimento)');
+        return HUGGING_FACE_API_KEY;
+    }
+    
+    // 3. Tentar localStorage (backup)
+    if (typeof localStorage !== 'undefined') {
+        const storedKey = localStorage.getItem('hf_api_key');
+        if (storedKey && storedKey.startsWith('hf_')) {
+            console.log('🔑 Usando chave do localStorage');
+            return storedKey;
+        }
+    }
+    
+    console.log('🚫 Nenhuma chave API encontrada');
+    return null;
+}
+
+// ========== FUNÇÃO PARA SALVAR CHAVE LOCALMENTE (DESENVOLVIMENTO) ==========
+function salvarChaveLocal(chave) {
+    if (chave && chave.startsWith('hf_') && typeof localStorage !== 'undefined') {
+        localStorage.setItem('hf_api_key', chave);
+        console.log('💾 Chave salva localmente para desenvolvimento');
+        return true;
+    }
+    return false;
+}// ========== PROCESSAMENTO DA IMAGEM FINAL ==========
 async function processarImagemFinal(imageBlob) {
     return new Promise((resolve) => {
         const canvas = document.getElementById('canvasImagem');
