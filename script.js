@@ -46,13 +46,6 @@ let versiculos = {};
 let versiculoAtual = null;
 let imagemAtualBlob = null;
 
-// ========== CORREÇÃO: MODELOS GRATUITOS ==========
-const modelosHuggingFace = {
-    rapida: "pollinations", // Usar Pollinations para todas
-    media: "pollinations",
-    alta: "pollinations"
-};
-
 // Prompts específicos para cada tema com foco no texto do versículo
 const criarPromptPersonalizado = (tema, textoVersiculo) => {
     const palavrasChave = extrairPalavrasChave(textoVersiculo);
