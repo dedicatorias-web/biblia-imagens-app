@@ -297,67 +297,390 @@ async function gerarVersiculoComIA() {
 }
 
 // ========== TENTATIVAS DE GERAÇÃO COM IA ==========
-async function tentarGerarImagemIA(prompt, tema) {
-    const qualidades = ['rapida', 'media'];
+// ========== 30 MODELOS HUGGING FACE CATEGORIZADOS ==========
+const modelosHuggingFace = {
     
-    for (let i = 0; i < qualidades.length; i++) {
+    // ========== SEÇÃO RÁPIDA (10 modelos) - Prioridade máxima ==========
+    rapida: [
+        {
+            nome: "Stable Diffusion v1.5",
+            url: "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5",
+            categoria: "rapida",
+            confiabilidade: 9
+        },
+        {
+            nome: "CompVis SD v1.4", 
+            url: "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4",
+            categoria: "rapida",
+            confiabilidade: 8
+        },
+        {
+            nome: "SD Turbo",
+            url: "https://api-inference.huggingface.co/models/stabilityai/sd-turbo",
+            categoria: "rapida", 
+            confiabilidade: 7
+        },
+        {
+            nome: "Openjourney v4",
+            url: "https://api-inference.huggingface.co/models/prompthero/openjourney-v4",
+            categoria: "rapida",
+            confiabilidade: 8
+        },
+        {
+            nome: "Deliberate v2",
+            url: "https://api-inference.huggingface.co/models/XpucT/Deliberate",
+            categoria: "rapida",
+            confiabilidade: 7
+        },
+        {
+            nome: "Anything v3",
+            url: "https://api-inference.huggingface.co/models/Linaqruf/anything-v3.0",
+            categoria: "rapida",
+            confiabilidade: 6
+        },
+        {
+            nome: "DreamShaper",
+            url: "https://api-inference.huggingface.co/models/Lykon/DreamShaper",
+            categoria: "rapida", 
+            confiabilidade: 7
+        },
+        {
+            nome: "Protogen x3.4",
+            url: "https://api-inference.huggingface.co/models/darkstorm2150/Protogen_x3.4_Official_Release",
+            categoria: "rapida",
+            confiabilidade: 6
+        },
+        {
+            nome: "AbyssOrangeMix3",
+            url: "https://api-inference.huggingface.co/models/WarriorMama777/OrangeMixs",
+            categoria: "rapida",
+            confiabilidade: 6
+        },
+        {
+            nome: "Counterfeit v3",
+            url: "https://api-inference.huggingface.co/models/gsdf/Counterfeit-V3.0",
+            categoria: "rapida",
+            confiabilidade: 5
+        }
+    ],
+
+    // ========== SEÇÃO MÉDIA (10 modelos) - Qualidade equilibrada ==========
+    media: [
+        {
+            nome: "Stable Diffusion v2.1",
+            url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1",
+            categoria: "media",
+            confiabilidade: 9
+        },
+        {
+            nome: "Dreamlike Photoreal 2.0",
+            url: "https://api-inference.huggingface.co/models/dreamlike-art/dreamlike-photoreal-2.0",
+            categoria: "media",
+            confiabilidade: 8
+        },
+        {
+            nome: "Realistic Vision v5",
+            url: "https://api-inference.huggingface.co/models/SG161222/Realistic_Vision_V5.1_noVAE",
+            categoria: "media",
+            confiabilidade: 8
+        },
+        {
+            nome: "ChilloutMix",
+            url: "https://api-inference.huggingface.co/models/TASUKU2023/Chilloutmix",
+            categoria: "media",
+            confiabilidade: 7
+        },
+        {
+            nome: "Analog Diffusion",
+            url: "https://api-inference.huggingface.co/models/wavymulder/Analog-Diffusion",
+            categoria: "media",
+            confiabilidade: 7
+        },
+        {
+            nome: "Epic Realism",
+            url: "https://api-inference.huggingface.co/models/emilianJR/epiCRealism",
+            categoria: "media",
+            confiabilidade: 6
+        },
+        {
+            nome: "Realistic Vision v4",
+            url: "https://api-inference.huggingface.co/models/SG161222/Realistic_Vision_V4.0",
+            categoria: "media",
+            confiabilidade: 7
+        },
+        {
+            nome: "DreamShaper v7",
+            url: "https://api-inference.huggingface.co/models/Lykon/dreamshaper-7",
+            categoria: "media",
+            confiabilidade: 6
+        },
+        {
+            nome: "MajicMix Realistic",
+            url: "https://api-inference.huggingface.co/models/digiplay/majicMIX.realistic_v6",
+            categoria: "media",
+            confiabilidade: 6
+        },
+        {
+            nome: "Rev Animated",
+            url: "https://api-inference.huggingface.co/models/stablediffusionapi/rev-animated",
+            categoria: "media",
+            confiabilidade: 5
+        }
+    ],
+
+    // ========== SEÇÃO ALTA (10 modelos) - Máxima qualidade ==========
+    alta: [
+        {
+            nome: "SDXL Base 1.0",
+            url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
+            categoria: "alta",
+            confiabilidade: 9
+        },
+        {
+            nome: "SDXL Turbo",
+            url: "https://api-inference.huggingface.co/models/stabilityai/sdxl-turbo",
+            categoria: "alta",
+            confiabilidade: 8
+        },
+        {
+            nome: "Juggernaut XL",
+            url: "https://api-inference.huggingface.co/models/RunDiffusion/Juggernaut-XL-v9",
+            categoria: "alta",
+            confiabilidade: 8
+        },
+        {
+            nome: "RealVisXL v4",
+            url: "https://api-inference.huggingface.co/models/SG161222/RealVisXL_V4.0",
+            categoria: "alta",
+            confiabilidade: 7
+        },
+        {
+            nome: "DreamShaper XL",
+            url: "https://api-inference.huggingface.co/models/Lykon/dreamshaper-xl-1-0",
+            categoria: "alta",
+            confiabilidade: 7
+        },
+        {
+            nome: "Playground v2.5",
+            url: "https://api-inference.huggingface.co/models/playgroundai/playground-v2.5-1024px-aesthetic",
+            categoria: "alta",
+            confiabilidade: 6
+        },
+        {
+            nome: "Crystal Clear XL",
+            url: "https://api-inference.huggingface.co/models/SG161222/crystalClearXL_ccxl",
+            categoria: "alta",
+            confiabilidade: 6
+        },
+        {
+            nome: "Copax TimeLessXL",
+            url: "https://api-inference.huggingface.co/models/Copax/COPAX_TimeLessXL_SDXL1_Temporal_Consistency",
+            categoria: "alta",
+            confiabilidade: 5
+        },
+        {
+            nome: "AlbedoBase XL",
+            url: "https://api-inference.huggingface.co/models/PublicPrompts/AlbedoBase-XL",
+            categoria: "alta",
+            confiabilidade: 5
+        },
+        {
+            nome: "Kandinsky 2.2",
+            url: "https://api-inference.huggingface.co/models/kandinsky-community/kandinsky-2-2-decoder",
+            categoria: "alta",
+            confiabilidade: 4
+        }
+    ]
+};
+
+// ========== FUNÇÃO PRINCIPAL COM ESTRATÉGIA INTELIGENTE ==========
+async function tentarGerarImagemIA(prompt, tema) {
+    console.log('🚀 Iniciando geração com 30 modelos Hugging Face...');
+    
+    // Criar lista ordenada: rápida -> média -> alta, por confiabilidade
+    const todosModelos = [
+        ...modelosHuggingFace.rapida.sort((a, b) => b.confiabilidade - a.confiabilidade),
+        ...modelosHuggingFace.media.sort((a, b) => b.confiabilidade - a.confiabilidade),
+        ...modelosHuggingFace.alta.sort((a, b) => b.confiabilidade - a.confiabilidade)
+    ];
+    
+    console.log('📊 Estratégia de tentativas:');
+    console.log(`   🟢 Rápida: ${modelosHuggingFace.rapida.length} modelos`);
+    console.log(`   🟡 Média: ${modelosHuggingFace.media.length} modelos`);  
+    console.log(`   🔴 Alta: ${modelosHuggingFace.alta.length} modelos`);
+    console.log(`   📋 Total: ${todosModelos.length} modelos`);
+    
+    for (let i = 0; i < todosModelos.length; i++) {
+        const modelo = todosModelos[i];
+        
         try {
-            mostrarProgresso(`🤖 Tentativa ${i + 1}: Gerando com IA...`, 40 + (i * 20));
+            const progresso = 10 + (i * 80 / todosModelos.length);
+            const emoji = modelo.categoria === 'rapida' ? '⚡' : modelo.categoria === 'media' ? '⚖️' : '💎';
             
-            const blob = await chamarAPIHuggingFace('pollinations', prompt, qualidades[i]);
+            mostrarProgresso(
+                `${emoji} ${i + 1}/${todosModelos.length}: ${modelo.nome} (${modelo.categoria}) [${modelo.confiabilidade}/10]`, 
+                progresso
+            );
+            
+            console.log(`🔄 Tentando ${modelo.nome} (${modelo.categoria}) - Confiabilidade: ${modelo.confiabilidade}/10`);
+            
+            // Ajustar parâmetros baseado na categoria
+            const qualidadeParams = getParametrosPorCategoria(modelo.categoria);
+            const blob = await chamarAPIHuggingFace(modelo.url, prompt, qualidadeParams);
             
             if (blob && blob.size > 1000) {
-                console.log('✅ IA gerou imagem com sucesso!');
+                console.log(`✅ ${modelo.nome} (${modelo.categoria}) gerou imagem com sucesso!`);
+                mostrarProgresso(`✅ Sucesso com ${modelo.nome}!`, 95, 'success');
+                mostrarToast(`🎨 Imagem criada por: ${modelo.nome} (${modelo.categoria.toUpperCase()})`, 'success');
+                
+                // Log de estatísticas
+                console.log(`📈 Estatísticas: Tentativa ${i + 1}/${todosModelos.length} - Taxa de sucesso: ${((1/(i+1))*100).toFixed(1)}%`);
+                
                 return blob;
             }
             
         } catch (error) {
-            console.log(`Tentativa ${i + 1} falhou:`, error.message);
+            const errorType = classifyError(error.message);
+            console.log(`❌ ${modelo.nome} (${modelo.categoria}) falhou: ${errorType.emoji} ${errorType.message}`);
+            
+            // Para erro 503 (modelo carregando), tentar novamente nos primeiros 5 modelos
+            if (errorType.type === 'loading' && i < 5) {
+                console.log(`🔄 ${modelo.nome}: Esperando modelo carregar (${errorType.waitTime}s)...`);
+                await delay(errorType.waitTime * 1000);
+                
+                try {
+                    const blob = await chamarAPIHuggingFace(modelo.url, prompt, getParametrosPorCategoria(modelo.categoria));
+                    if (blob && blob.size > 1000) {
+                        console.log(`✅ ${modelo.nome} funcionou na segunda tentativa!`);
+                        mostrarToast(`🔄 ${modelo.nome} funcionou após aguardar carregamento!`, 'success');
+                        return blob;
+                    }
+                } catch (retryError) {
+                    console.log(`❌ ${modelo.nome}: Segunda tentativa também falhou`);
+                }
+            }
         }
         
-        if (i < qualidades.length - 1) {
-            await delay(1000);
+        // Pausa adaptativa baseada na categoria
+        const pausaMs = getPausaPorCategoria(modelo.categoria);
+        if (i < todosModelos.length - 1) {
+            await delay(pausaMs);
+        }
+        
+        // Log de progresso a cada 5 tentativas
+        if ((i + 1) % 5 === 0) {
+            console.log(`📊 Progresso: ${i + 1}/${todosModelos.length} tentativas (${(((i + 1) / todosModelos.length) * 100).toFixed(1)}%)`);
         }
     }
     
-    console.log('⚠️ Todas as tentativas de IA falharam');
+    console.log('⚠️ Todos os 30 modelos Hugging Face falharam');
+    mostrarProgresso('❌ Todos os modelos falharam, usando arte local...', 85, 'error');
+    mostrarToast('⚠️ Todas as 30 tentativas de IA falharam. Usando arte local.', 'warning');
+    
     return null;
 }
-////////////////////////////////////////
-async function chamarAPIHuggingFace(modelUrl, prompt, qualidade) {
+
+// ========== FUNÇÕES AUXILIARES ==========
+
+// Parâmetros otimizados por categoria
+function getParametrosPorCategoria(categoria) {
     const parametros = {
-        rapida: { steps: 15, width: 512, height: 384 },
-        media: { steps: 20, width: 640, height: 480 },
-        alta: { steps: 25, width: 768, height: 576 }
+        rapida: {
+            steps: 8,
+            width: 512,
+            height: 384,
+            guidance_scale: 6.5
+        },
+        media: {
+            steps: 15,
+            width: 640,
+            height: 480,
+            guidance_scale: 7.5
+        },
+        alta: {
+            steps: 25,
+            width: 1024,
+            height: 768,
+            guidance_scale: 8.5
+        }
+    };
+    return parametros[categoria] || parametros.media;
+}
+
+// Pausa adaptativa
+function getPausaPorCategoria(categoria) {
+    const pausas = {
+        rapida: 800,   // 0.8s
+        media: 1200,   // 1.2s  
+        alta: 2000     // 2.0s
+    };
+    return pausas[categoria] || 1000;
+}
+
+// Classificar tipos de erro
+function classifyError(errorMessage) {
+    if (errorMessage.includes('401') || errorMessage.includes('Invalid username')) {
+        return { type: 'auth', emoji: '🔐', message: 'Sem autenticação', waitTime: 0 };
+    } else if (errorMessage.includes('503') || errorMessage.includes('loading')) {
+        return { type: 'loading', emoji: '⏳', message: 'Modelo carregando', waitTime: 3 };
+    } else if (errorMessage.includes('429')) {
+        return { type: 'rate', emoji: '⏰', message: 'Limite de rate', waitTime: 0 };
+    } else if (errorMessage.includes('400')) {
+        return { type: 'prompt', emoji: '🚫', message: 'Prompt inválido', waitTime: 0 };
+    } else if (errorMessage.includes('500')) {
+        return { type: 'server', emoji: '💥', message: 'Erro do servidor', waitTime: 0 };
+    } else {
+        return { type: 'unknown', emoji: '❓', message: 'Erro desconhecido', waitTime: 0 };
+    }
+}
+
+// ========== FUNÇÃO HUGGING FACE OTIMIZADA ==========
+async function chamarAPIHuggingFace(modelUrl, prompt, parametros) {
+    const headers = {
+        'Content-Type': 'application/json'
     };
     
-    const config = parametros[qualidade] || parametros.media;
+    // Chave opcional
+    if (typeof HUGGING_FACE_API_KEY !== 'undefined' && HUGGING_FACE_API_KEY && HUGGING_FACE_API_KEY !== 'SUA_CHAVE_AQUI') {
+        headers['Authorization'] = `Bearer ${HUGGING_FACE_API_KEY}`;
+    }
     
     const response = await fetch(modelUrl, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${HUGGING_FACE_API_KEY}` // ← CHAVE RESTAURADA
-        },
+        headers: headers,
         body: JSON.stringify({
             inputs: prompt,
             parameters: {
-                num_inference_steps: config.steps,
-                guidance_scale: 7.5,
-                width: config.width,
-                height: config.height
+                num_inference_steps: parametros.steps,
+                guidance_scale: parametros.guidance_scale,
+                width: parametros.width,
+                height: parametros.height,
+                negative_prompt: "blurry, bad quality, distorted, ugly, text, watermark, signature, low resolution"
             }
         })
     });
     
     if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+        let errorMsg = `HTTP ${response.status}`;
+        
+        try {
+            const errorObj = JSON.parse(errorText);
+            if (errorObj.error) {
+                errorMsg += `: ${errorObj.error}`;
+            }
+        } catch {
+            errorMsg += `: ${errorText}`;
+        }
+        
+        throw new Error(errorMsg);
     }
     
-    const blob = await response.blob();
-    return blob;
+    return await response.blob();
 }
+
+// ========== CONFIGURAÇÃO OPCIONAL DA CHAVE ==========
+// const HUGGING_FACE_API_KEY = 'hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 // ========== PROCESSAMENTO DA IMAGEM FINAL ==========
 async function processarImagemFinal(imageBlob) {
     return new Promise((resolve) => {
