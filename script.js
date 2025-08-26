@@ -1,43 +1,27 @@
-// ========== CONFIGURAÇÃO DA API KEY ==========
-// SUBSTITUA 'SUA_CHAVE_AQUI' pela sua chave real do Hugging Face
-const API_KEY = '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';
-
 // ========== CONFIGURAÇÕES DA APLICAÇÃO ==========
 let versiculos = {};
 let versiculoAtual = null;
 let imagemAtualBlob = null;
 
-// Modelos de IA para diferentes qualidades
-const modelos = {
-    rapida: "runwayml/stable-diffusion-v1-5",
-    media: "stabilityai/stable-diffusion-2-1",
-    alta: "stabilityai/stable-diffusion-xl-base-1.0"
-};
-
 // Prompts para estilo barroco baseados no tema
 const promptsBarrocos = {
-    esperanca: "baroque masterpiece painting, divine light streaming through dramatic clouds, golden rays illuminating peaceful landscape, ornate religious symbolism, dramatic chiaroscuro lighting, renaissance oil painting style, heavenly atmosphere, intricate baroque details, warm golden tones, masterful composition",
+    esperanca: "baroque masterpiece oil painting, divine golden light streaming through dramatic clouds, heavenly rays illuminating peaceful landscape, ornate religious symbolism, dramatic chiaroscuro lighting, renaissance style, warm golden atmosphere, intricate baroque details, hope and faith theme",
     
-    amor: "baroque oil painting masterpiece, cherubs and angels in golden light, romantic divine scene, ornate decorative elements, dramatic shadows and highlights, renaissance style, divine love symbolism, rich warm colors, classical composition, baroque religious art",
+    amor: "baroque oil painting, cherubs and angels in warm golden light, romantic divine scene with ornate decorative elements, dramatic shadows and highlights, renaissance masterpiece style, divine love symbolism, rich warm colors, classical religious composition",
     
-    paz: "baroque landscape painting, serene pastoral scene with divine soft light, olive branches, white doves in flight, peaceful countryside, dramatic sky with gentle golden clouds, classical composition, warm earth tones, baroque masterpiece style",
+    paz: "baroque landscape painting, serene pastoral scene with soft divine light, white doves flying, olive branches, peaceful countryside, dramatic sky with golden clouds, classical composition, warm earth tones, baroque religious art style",
     
-    fe: "baroque religious masterpiece, praying hands bathed in divine light from above, magnificent cathedral interior, ornate gothic architecture, dramatic lighting, spiritual golden symbolism, classical religious art style, baroque composition",
+    fe: "baroque religious painting, praying hands in divine light from above, magnificent cathedral interior, ornate gothic architecture, dramatic lighting, spiritual golden symbolism, classical religious art, baroque masterpiece composition",
     
-    sabedoria: "baroque portrait masterpiece, ancient wisdom symbols, ornate scrolls and leather books, wise owl perched on ancient tome, warm candlelight illumination, classical library with baroque architecture, dramatic chiaroscuro, rich golden tones",
+    sabedoria: "baroque portrait style, ancient wisdom symbols, ornate scrolls and ancient books, wise owl, warm candlelight, classical library with baroque architecture, dramatic chiaroscuro, rich golden tones, renaissance masterpiece",
     
-    forca: "baroque heroic painting, powerful figure in classical dramatic pose, divine light breaking through stormy clouds, ornate golden armor, dynamic composition, renaissance masterpiece style, dramatic shadows and highlights, biblical strength theme",
+    forca: "baroque heroic painting, powerful figure in classical pose, divine light breaking through stormy clouds, ornate elements, dynamic composition, renaissance style, dramatic shadows and highlights, biblical strength symbolism",
     
-    protecao: "baroque religious masterpiece, magnificent guardian angel with spread golden wings, protective divine light radiating, ornate heavenly setting, dramatic baroque composition, warm celestial lighting, classical religious art style"
+    protecao: "baroque religious masterpiece, guardian angel with golden wings spread wide, protective divine light, heavenly setting, ornate baroque composition, warm celestial lighting, classical religious art style"
 };
 
 // ========== INICIALIZAÇÃO ==========
 document.addEventListener('DOMContentLoaded', function() {
-    if (!API_KEY || API_KEY === 'SUA_CHAVE_AQUI') {
-        mostrarToast('❌ Erro: API Key não configurada. Contate o desenvolvedor.');
-        return;
-    }
-    
     carregarVersiculos();
     configurarEventListeners();
     atualizarContadores();
@@ -53,7 +37,6 @@ function configurarEventListeners() {
     document.getElementById('copiarTexto').addEventListener('click', copiarTexto);
     document.getElementById('compartilharFacebook').addEventListener('click', compartilharFacebook);
     
-    // Atualizar display da opacidade em tempo real
     document.getElementById('opacidadeFundo').addEventListener('input', function() {
         const valor = Math.round(this.value * 100);
         document.getElementById('opacidadeDisplay').textContent = valor + '%';
@@ -65,7 +48,7 @@ async function carregarVersiculos() {
     try {
         const response = await fetch('versiculos.json');
         versiculos = await response.json();
-        gerarVersiculoComIA(); // Gerar primeiro versículo automaticamente
+        gerarVersiculoComIA();
     } catch (error) {
         console.error('Erro ao carregar versículos:', error);
         mostrarToast('❌ Erro ao carregar versículos');
@@ -82,93 +65,93 @@ async function gerarVersiculoComIA() {
         return;
     }
     
-    // Selecionar versículo aleatório
     const indiceAleatorio = Math.floor(Math.random() * versiculosTema.length);
     versiculoAtual = versiculosTema[indiceAleatorio];
     
-    // Atualizar interface com o texto
     document.getElementById('versiculoTexto').textContent = `"${versiculoAtual.texto}"`;
     document.getElementById('versiculoReferencia').textContent = versiculoAtual.referencia;
     
-    // Gerar imagem com IA
     await gerarImagemIA(tema);
-    
-    // Atualizar contador
     incrementarContador();
 }
 
 async function gerarImagemIA(tema) {
     try {
-        // Desabilitar botão durante geração
         const botaoGerar = document.getElementById('gerarVersiculo');
         botaoGerar.disabled = true;
-        botaoGerar.textContent = '🎨 Gerando...';
+        botaoGerar.textContent = '🎨 Gerando arte...';
         
-        mostrarProgresso('🎨 Preparando a obra de arte...', 10);
+        mostrarProgresso('🎨 Criando obra barroca...', 20);
         
-        const qualidade = document.getElementById('qualidadeImagem').value;
-        const modelo = modelos[qualidade];
         const prompt = criarPromptCompleto(tema);
+        const qualidade = document.getElementById('qualidadeImagem').value;
         
-        console.log('Prompt enviado:', prompt); // Para debug
+        // Configurações baseadas na qualidade
+        const config = {
+            rapida: { width: 512, height: 384, steps: 20 },
+            media: { width: 768, height: 512, steps: 30 },
+            alta: { width: 1024, height: 768, steps: 40 }
+        };
         
-        mostrarProgresso('🤖 Enviando para a IA...', 30);
+        const { width, height } = config[qualidade];
         
-        const response = await fetch(
-            `https://api-inference.huggingface.co/models/${modelo}`,
-            {
-                headers: {
-                    'Authorization': `Bearer ${API_KEY}`,
-                    'Content-Type': 'application/json',
-                },
-                method: 'POST',
-                body: JSON.stringify({
-                    inputs: prompt,
-                    parameters: {
-                        num_inference_steps: qualidade === 'alta' ? 50 : qualidade === 'media' ? 35 : 25,
-                        guidance_scale: 7.5,
-                        width: 768,
-                        height: 512,
-                        negative_prompt: "text, words, letters, watermark, signature, blurry, low quality, distorted, bad anatomy"
-                    }
-                }),
-            }
-        );
+        mostrarProgresso('🤖 Processando com IA...', 60);
         
-        mostrarProgresso('🎨 Criando obra barroca...', 70);
+        // URL do Pollinations AI (gratuito, sem API key)
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&seed=${Math.floor(Math.random() * 1000000)}&enhance=true&nologo=true`;
         
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Erro na API: ${response.status} - ${errorText}`);
-        }
+        console.log('Gerando imagem com prompt:', prompt);
         
-        const imageBlob = await response.blob();
-        imagemAtualBlob = imageBlob;
+        mostrarProgresso('✨ Finalizando obra...', 90);
         
-        mostrarProgresso('✨ Adicionando texto sagrado...', 90);
+        // Carregar imagem
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
         
-        // Criar imagem final com texto
-        await criarImagemFinal(imageBlob);
+        img.onload = async function() {
+            // Converter para blob
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            
+            canvas.toBlob(async (blob) => {
+                imagemAtualBlob = blob;
+                await criarImagemFinal(blob);
+                mostrarProgresso('🙏 Obra concluída!', 100);
+                
+                setTimeout(() => {
+                    const status = document.getElementById('generationStatus');
+                    if (status) status.classList.add('hidden');
+                }, 2000);
+                
+                mostrarToast('✅ Imagem sagrada criada!');
+                
+                botaoGerar.disabled = false;
+                botaoGerar.textContent = '🎨 Gerar Nova Imagem';
+            }, 'image/png');
+        };
         
-        mostrarProgresso('🙏 Obra concluída!', 100);
-        
-        // Ocultar progresso após 2 segundos
-        setTimeout(() => {
+        img.onerror = function() {
+            console.error('Erro ao carregar imagem da IA');
+            criarImagemSemIA();
+            mostrarToast('⚠️ Usando estilo alternativo');
+            
+            botaoGerar.disabled = false;
+            botaoGerar.textContent = '🎨 Gerar Nova Imagem';
+            
             const status = document.getElementById('generationStatus');
             if (status) status.classList.add('hidden');
-        }, 2000);
+        };
         
-        mostrarToast('✅ Imagem sagrada criada com sucesso!');
+        img.src = imageUrl;
         
     } catch (error) {
         console.error('Erro ao gerar imagem:', error);
-        mostrarToast(`❌ Erro na geração: ${error.message}`);
-        
-        // Em caso de erro, mostrar versículo sem imagem de fundo
         criarImagemSemIA();
+        mostrarToast('⚠️ Usando modo offline');
         
-    } finally {
-        // Reabilitar botão
         const botaoGerar = document.getElementById('gerarVersiculo');
         botaoGerar.disabled = false;
         botaoGerar.textContent = '🎨 Gerar Nova Imagem';
@@ -178,54 +161,41 @@ async function gerarImagemIA(tema) {
     }
 }
 
-// ========== CRIAÇÃO DE PROMPTS ==========
 function criarPromptCompleto(tema) {
     const promptBase = promptsBarrocos[tema];
     const palavrasChave = extrairPalavrasChave(versiculoAtual.texto);
     
-    // Prompt mais detalhado para melhor qualidade
-    return `${promptBase}, biblical inspiration: ${palavrasChave}, ultra detailed baroque masterpiece, 8k resolution, professional religious art, museum quality, no text overlay, clean composition, dramatic lighting, renaissance painting style`;
+    return `${promptBase}, biblical inspiration: ${palavrasChave}, masterpiece quality, highly detailed, professional religious art, no text, no words, clean composition, 8k resolution`;
 }
 
 function extrairPalavrasChave(texto) {
-    // Lista de palavras a ignorar (mais completa)
     const ignorar = [
         'para', 'porque', 'senhor', 'deus', 'seja', 'está', 'como', 'todo', 'mais', 'pelo', 'pela',
-        'uma', 'dos', 'das', 'com', 'não', 'que', 'ele', 'ela', 'seu', 'sua', 'meu', 'minha',
-        'nos', 'nas', 'por', 'ser', 'ter', 'ver', 'bem', 'mas', 'sim', 'sem', 'sob', 'até'
+        'uma', 'dos', 'das', 'com', 'não', 'que', 'ele', 'ela', 'seu', 'sua', 'nos', 'nas'
     ];
     
     const palavrasImportantes = texto.toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
         .split(/[,.;:!?\s]+/)
         .filter(palavra => palavra.length > 3)
         .filter(palavra => !ignorar.includes(palavra))
-        .slice(0, 6);
+        .slice(0, 4);
     
     return palavrasImportantes.join(', ');
 }
 
-// ========== CRIAÇÃO DE IMAGENS ==========
 async function criarImagemFinal(imageBlob) {
     return new Promise((resolve) => {
         const canvas = document.getElementById('canvasImagem');
         const ctx = canvas.getContext('2d');
         
-        // Limpar canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
-        // Carregar e desenhar imagem da IA
         const img = new Image();
         img.onload = function() {
-            // Desenhar imagem de fundo (redimensionada para o canvas)
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            
-            // Adicionar overlay semi-transparente
             adicionarOverlayTexto(ctx);
-            
-            // Adicionar texto do versículo
             adicionarTextoSobreImagem(ctx);
-            
             resolve();
         };
         
@@ -233,35 +203,196 @@ async function criarImagemFinal(imageBlob) {
     });
 }
 
-// Fallback: criar imagem apenas com gradiente se IA falhar
 function criarImagemSemIA() {
     const canvas = document.getElementById('canvasImagem');
     const ctx = canvas.getContext('2d');
     
-    // Cores baseadas no tema
     const coresTema = {
-        esperanca: ['#FFD700', '#FFA500'],
-        amor: ['#FF69B4', '#FF1493'],
-        paz: ['#87CEEB', '#4682B4'],
-        fe: ['#9370DB', '#8A2BE2'],
-        sabedoria: ['#DAA520', '#B8860B'],
-        forca: ['#DC143C', '#B22222'],
-        protecao: ['#32CD32', '#228B22']
+        esperanca: ['#FFD700', '#FF8C00', '#FFA500'],
+        amor: ['#FF69B4', '#FF1493', '#DC143C'],
+        paz: ['#87CEEB', '#4682B4', '#6495ED'],
+        fe: ['#9370DB', '#8A2BE2', '#9932CC'],
+        sabedoria: ['#DAA520', '#B8860B', '#CD853F'],
+        forca: ['#DC143C', '#B22222', '#8B0000'],
+        protecao: ['#32CD32', '#228B22', '#006400']
     };
     
     const tema = document.getElementById('temaEscolhido').value;
-    const cores = coresTema[tema] || ['#667eea', '#764ba2'];
+    const cores = coresTema[tema] || ['#667eea', '#764ba2', '#5a67d8'];
     
-    // Criar gradiente de fundo
-    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    // Criar gradiente radial mais complexo
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = Math.max(canvas.width, canvas.height) / 2;
+    
+    const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
     gradient.addColorStop(0, cores[0]);
-    gradient.addColorStop(1, cores[1]);
+    gradient.addColorStop(0.5, cores[1]);
+    gradient.addColorStop(1, cores[2]);
     
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Adicionar texto
+    // Adicionar padrão decorativo
+    adicionarPadraoDecorativo(ctx, tema);
     adicionarTextoSobreImagem(ctx);
+}
+
+function adicionarPadraoDecorativo(ctx, tema) {
+    ctx.save();
+    ctx.globalAlpha = 0.1;
+    
+    // Padrões baseados no tema
+    const padroes = {
+        esperanca: () => desenharEstrelas(ctx),
+        amor: () => desenharCoracoes(ctx),
+        paz: () => desenharPombas(ctx),
+        fe: () => desenharCruzes(ctx),
+        sabedoria: () => desenharScrolls(ctx),
+        forca: () => desenharRaios(ctx),
+        protecao: () => desenharEscudos(ctx)
+    };
+    
+    const padrao = padroes[tema] || padroes.esperanca;
+    padrao();
+    
+    ctx.restore();
+}
+
+function desenharEstrelas(ctx) {
+    ctx.fillStyle = 'gold';
+    for (let i = 0; i < 20; i++) {
+        const x = Math.random() * ctx.canvas.width;
+        const y = Math.random() * ctx.canvas.height;
+        desenharEstrela(ctx, x, y, 15, 5, 0.5);
+    }
+}
+
+function desenharEstrela(ctx, cx, cy, raioExt, pontas, raioInt) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.beginPath();
+    ctx.moveTo(0, 0 - raioExt);
+    
+    for (let i = 0; i < pontas; i++) {
+        ctx.rotate(Math.PI / pontas);
+        ctx.lineTo(0, 0 - (raioExt * raioInt));
+        ctx.rotate(Math.PI / pontas);
+        ctx.lineTo(0, 0 - raioExt);
+    }
+    
+    ctx.fill();
+    ctx.restore();
+}
+
+function desenharCoracoes(ctx) {
+    ctx.fillStyle = 'pink';
+    for (let i = 0; i < 15; i++) {
+        const x = Math.random() * ctx.canvas.width;
+        const y = Math.random() * ctx.canvas.height;
+        desenharCoracao(ctx, x, y, 20);
+    }
+}
+
+function desenharCoracao(ctx, x, y, size) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.beginPath();
+    ctx.arc(-size/4, -size/4, size/4, 0, Math.PI * 2);
+    ctx.arc(size/4, -size/4, size/4, 0, Math.PI * 2);
+    ctx.moveTo(0, size/4);
+    ctx.lineTo(-size/2, -size/8);
+    ctx.lineTo(size/2, -size/8);
+    ctx.lineTo(0, size/4);
+    ctx.fill();
+    ctx.restore();
+}
+
+function desenharPombas(ctx) {
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 10; i++) {
+        const x = Math.random() * ctx.canvas.width;
+        const y = Math.random() * ctx.canvas.height;
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, Math.PI);
+        ctx.moveTo(x - 15, y);
+        ctx.lineTo(x - 5, y - 5);
+        ctx.moveTo(x + 15, y);
+        ctx.lineTo(x + 5, y - 5);
+        ctx.stroke();
+    }
+}
+
+function desenharCruzes(ctx) {
+    ctx.strokeStyle = 'gold';
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 8; i++) {
+        const x = Math.random() * ctx.canvas.width;
+        const y = Math.random() * ctx.canvas.height;
+        const size = 20;
+        
+        ctx.beginPath();
+        ctx.moveTo(x, y - size);
+        ctx.lineTo(x, y + size);
+        ctx.moveTo(x - size/2, y - size/2);
+        ctx.lineTo(x + size/2, y - size/2);
+        ctx.stroke();
+    }
+}
+
+function desenharScrolls(ctx) {
+    ctx.strokeStyle = 'burlywood';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 6; i++) {
+        const x = Math.random() * ctx.canvas.width;
+        const y = Math.random() * ctx.canvas.height;
+        
+        ctx.beginPath();
+        ctx.rect(x - 15, y - 10, 30, 20);
+        ctx.moveTo(x - 15, y - 10);
+        ctx.bezierCurveTo(x - 20, y - 15, x - 20, y + 15, x - 15, y + 10);
+        ctx.moveTo(x + 15, y - 10);
+        ctx.bezierCurveTo(x + 20, y - 15, x + 20, y + 15, x + 15, y + 10);
+        ctx.stroke();
+    }
+}
+
+function desenharRaios(ctx) {
+    ctx.strokeStyle = 'yellow';
+    ctx.lineWidth = 3;
+    for (let i = 0; i < 12; i++) {
+        const x = Math.random() * ctx.canvas.width;
+        const y = Math.random() * ctx.canvas.height;
+        
+        ctx.beginPath();
+        ctx.moveTo(x, y - 25);
+        ctx.lineTo(x - 8, y - 5);
+        ctx.lineTo(x + 3, y - 5);
+        ctx.lineTo(x - 5, y + 10);
+        ctx.lineTo(x + 8, y - 5);
+        ctx.lineTo(x - 3, y - 5);
+        ctx.lineTo(x, y - 25);
+        ctx.stroke();
+    }
+}
+
+function desenharEscudos(ctx) {
+    ctx.fillStyle = 'silver';
+    for (let i = 0; i < 8; i++) {
+        const x = Math.random() * ctx.canvas.width;
+        const y = Math.random() * ctx.canvas.height;
+        
+        ctx.beginPath();
+        ctx.moveTo(x, y - 15);
+        ctx.lineTo(x - 10, y - 10);
+        ctx.lineTo(x - 10, y + 5);
+        ctx.lineTo(x, y + 15);
+        ctx.lineTo(x + 10, y + 5);
+        ctx.lineTo(x + 10, y - 10);
+        ctx.closePath();
+        ctx.fill();
+    }
 }
 
 function adicionarOverlayTexto(ctx) {
@@ -271,7 +402,6 @@ function adicionarOverlayTexto(ctx) {
     const canvas = ctx.canvas;
     let overlayY, overlayHeight;
     
-    // Definir área do overlay baseado na posição
     switch(posicao) {
         case 'superior':
             overlayY = 0;
@@ -288,7 +418,6 @@ function adicionarOverlayTexto(ctx) {
             break;
     }
     
-    // Criar gradiente suave para o overlay
     const gradient = ctx.createLinearGradient(0, overlayY, 0, overlayY + overlayHeight);
     
     if (posicao === 'superior') {
@@ -315,15 +444,13 @@ function adicionarTextoSobreImagem(ctx) {
     const canvas = ctx.canvas;
     const posicao = document.getElementById('posicaoTexto').value;
     
-    // Configurações avançadas de texto
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
     ctx.shadowColor = 'rgba(0,0,0,0.9)';
-    ctx.shadowBlur = 6;
+    ctx.shadowBlur = 8;
     ctx.shadowOffsetX = 2;
     ctx.shadowOffsetY = 2;
     
-    // Posicionar texto
     let yBase;
     switch(posicao) {
         case 'superior':
@@ -338,44 +465,36 @@ function adicionarTextoSobreImagem(ctx) {
             break;
     }
     
-    // Texto principal do versículo
-    ctx.font = 'bold 30px Inter, Georgia, serif';
+    ctx.font = 'bold 32px Inter, Georgia, serif';
     const texto = versiculoAtual.texto;
     
-    // Quebrar texto em linhas otimizadas
     const linhas = quebrarTextoInteligente(ctx, texto, canvas.width - 100);
     
-    // Calcular posição vertical centralizada
-    const alturaLinha = 38;
+    const alturaLinha = 40;
     const alturaTotal = linhas.length * alturaLinha;
     const yInicial = yBase - (alturaTotal / 2);
     
-    // Desenhar cada linha com espaçamento otimizado
     linhas.forEach((linha, index) => {
         ctx.fillText(linha, canvas.width / 2, yInicial + (index * alturaLinha));
     });
     
-    // Referência bíblica com estilo diferenciado
-    ctx.font = 'italic 24px Inter, Georgia, serif';
-    ctx.shadowBlur = 4;
-    const yReferencia = yInicial + alturaTotal + 35;
+    ctx.font = 'italic 26px Inter, Georgia, serif';
+    ctx.shadowBlur = 6;
+    const yReferencia = yInicial + alturaTotal + 40;
     ctx.fillText(`— ${versiculoAtual.referencia}`, canvas.width / 2, yReferencia);
     
-    // Reset shadow para não afetar outros elementos
     ctx.shadowColor = 'transparent';
     ctx.shadowBlur = 0;
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 0;
 }
 
-// ========== UTILITÁRIOS ==========
 function quebrarTextoInteligente(ctx, texto, larguraMax) {
     const palavras = texto.split(' ');
     const linhas = [];
     let linhaAtual = '';
     
-    for (let i = 0; i < palavras.length; i++) {
-        const palavra = palavras[i];
+    for (let palavra of palavras) {
         const testeLinha = linhaAtual + (linhaAtual ? ' ' : '') + palavra;
         const largura = ctx.measureText(testeLinha).width;
         
@@ -417,7 +536,6 @@ function mostrarProgresso(mensagem, porcentagem) {
     status.querySelector('.progress-fill').style.width = porcentagem + '%';
 }
 
-// ========== FUNCIONALIDADES DE COMPARTILHAMENTO ==========
 function baixarImagem() {
     if (!versiculoAtual) {
         mostrarToast('❌ Nenhuma imagem para baixar');
@@ -427,13 +545,12 @@ function baixarImagem() {
     const canvas = document.getElementById('canvasImagem');
     const link = document.createElement('a');
     
-    // Nome do arquivo mais descritivo
     const nomeArquivo = `versiculo-${versiculoAtual.referencia
         .replace(/[^a-zA-Z0-9]/g, '_')
         .toLowerCase()}-${Date.now()}.png`;
     
     link.download = nomeArquivo;
-    link.href = canvas.toDataURL('image/png', 1.0); // Máxima qualidade
+    link.href = canvas.toDataURL('image/png', 1.0);
     link.click();
     
     mostrarToast('💾 Imagem baixada com sucesso!');
@@ -445,7 +562,7 @@ function compartilharWhatsApp() {
         return;
     }
     
-    const texto = `🙏 *${versiculoAtual.referencia}*\n\n"_${versiculoAtual.texto}_"\n\n✨ Imagem criada com IA em: ${window.location.href}`;
+    const texto = `🙏 *${versiculoAtual.referencia}*\n\n"_${versiculoAtual.texto}_"\n\n✨ Criado em: ${window.location.href}`;
     const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
     
     window.open(url, '_blank');
@@ -462,9 +579,8 @@ function copiarTexto() {
     
     if (navigator.clipboard) {
         navigator.clipboard.writeText(texto).then(() => {
-            mostrarToast('📋 Texto copiado para a área de transferência!');
+            mostrarToast('📋 Texto copiado!');
         }).catch(() => {
-            // Fallback para navegadores mais antigos
             copiarTextoFallback(texto);
         });
     } else {
@@ -495,38 +611,30 @@ function compartilharFacebook() {
     mostrarToast('📘 Abrindo Facebook...');
 }
 
-// ========== SISTEMA DE NOTIFICAÇÕES ==========
 function mostrarToast(mensagem, tipo = 'success') {
     const toast = document.getElementById('toast');
-    
-    // Adicionar classe baseada no tipo
     toast.className = `toast ${tipo}`;
     toast.textContent = mensagem;
     toast.classList.add('show');
     
-    // Auto-ocultar após 4 segundos
     setTimeout(() => {
         toast.classList.remove('show');
     }, 4000);
 }
 
-// ========== CONTADORES E ESTATÍSTICAS ==========
 function incrementarContador() {
     const hoje = new Date().toDateString();
     const contadorHoje = localStorage.getItem('contador_hoje');
     const dataContador = localStorage.getItem('data_contador');
     
     if (dataContador !== hoje) {
-        // Novo dia, resetar contador diário
         localStorage.setItem('contador_hoje', '1');
         localStorage.setItem('data_contador', hoje);
     } else {
-        // Mesmo dia, incrementar
         const novoContador = parseInt(contadorHoje || '0') + 1;
         localStorage.setItem('contador_hoje', novoContador);
     }
     
-    // Contador total
     const contadorTotal = parseInt(localStorage.getItem('contador_total') || '0') + 1;
     localStorage.setItem('contador_total', contadorTotal);
     
