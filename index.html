@@ -3,43 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Versículos em Imagem</title>
+    <title>Versículos Bíblicos - Gere e Compartilhe</title>
+    <meta name="description" content="Crie lindas imagens com versículos bíblicos e compartilhe no WhatsApp">
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <header>
             <h1>📖 Versículos Bíblicos</h1>
-            <p>Gere e compartilhe imagens inspiradoras</p>
+            <p>Gere lindas imagens inspiradoras e compartilhe</p>
         </header>
 
         <main>
             <div class="controls">
+                <div class="control-group">
+                    <label for="temaEscolhido">Tema:</label>
+                    <select id="temaEscolhido">
+                        <option value="esperanca">✨ Esperança</option>
+                        <option value="amor">❤️ Amor</option>
+                        <option value="paz">🕊️ Paz</option>
+                        <option value="fe">🙏 Fé</option>
+                        <option value="sabedoria">🦉 Sabedoria</option>
+                        <option value="forca">💪 Força</option>
+                        <option value="protecao">🛡️ Proteção</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="fonteEscolhida">Fonte:</label>
+                    <select id="fonteEscolhida">
+                        <option value="Inter">Inter</option>
+                        <option value="serif">Clássica</option>
+                        <option value="script">Elegante</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="tamanhoFonte">Tamanho:</label>
+                    <input type="range" id="tamanhoFonte" min="24" max="48" value="32">
+                    <span id="tamanhoDisplay">32px</span>
+                </div>
+
                 <button id="gerarVersiculo">🎲 Novo Versículo</button>
-                <select id="temaEscolhido">
-                    <option value="esperanca">Esperança</option>
-                    <option value="amor">Amor</option>
-                    <option value="paz">Paz</option>
-                    <option value="fe">Fé</option>
-                </select>
             </div>
 
             <div class="image-container">
                 <canvas id="canvasImagem" width="800" height="600"></canvas>
+                <div class="loading" id="loading">Gerando imagem...</div>
             </div>
 
             <div class="share-buttons">
-                <button id="baixarImagem">💾 Baixar</button>
+                <button id="baixarImagem">💾 Baixar Imagem</button>
                 <button id="compartilharWhatsApp">📱 WhatsApp</button>
+                <button id="copiarTexto">📋 Copiar Texto</button>
+                <button id="compartilharFacebook">📘 Facebook</button>
             </div>
 
             <div class="versiculo-info">
                 <p id="versiculoTexto"></p>
                 <p id="versiculoReferencia"></p>
+                <div class="stats">
+                    <span id="contadorVersiculos">0 versículos gerados hoje</span>
+                </div>
+            </div>
+
+            <div class="favorites">
+                <h3>❤️ Seus Favoritos</h3>
+                <div id="listaFavoritos"></div>
             </div>
         </main>
+
+        <footer>
+            <p>Feito com ❤️ para compartilhar a Palavra de Deus</p>
+        </footer>
     </div>
 
+    <div class="toast" id="toast"></div>
     <script src="script.js"></script>
 </body>
 </html>
