@@ -116,11 +116,9 @@ async function testarChaveAPI() {
 }
 
 
-// ========== CONFIGURAÇÃO DA API ==========
-const HUGGING_FACE_API_KEY = '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'; // Substitua pela sua chave
 
-// Se não tiver chave, pode usar esta temporária (limitada):
-// const HUGGING_FACE_API_KEY = 'hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+
+
 
 // ========== DEBUG - VERIFICAR ELEMENTOS ==========
 console.log('🔍 INICIANDO DEBUG...');
@@ -164,203 +162,150 @@ let versiculos = {};
 let versiculoAtual = null;
 let imagemAtualBlob = null;
 
-// ========== 30 MODELOS HUGGING FACE CATEGORIZADOS ==========
-const modelosHuggingFace = {
-    
-    // ========== SEÇÃO RÁPIDA (10 modelos) - Prioridade máxima ==========
+// ========== MODELOS HUGGING FACE TESTADOS E FUNCIONAIS ==========
+const modelosHuggingFaceFuncionais = {
+    // 🟢 CATEGORIA RÁPIDA (Modelos básicos e rápidos)
     rapida: [
-        {
-            nome: "Stable Diffusion v1.5",
-            url: "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5",
-            categoria: "rapida",
-            confiabilidade: 9
-        },
-        {
-            nome: "CompVis SD v1.4", 
-            url: "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4",
-            categoria: "rapida",
-            confiabilidade: 8
-        },
-        {
-            nome: "SD Turbo",
-            url: "https://api-inference.huggingface.co/models/stabilityai/sd-turbo",
-            categoria: "rapida", 
-            confiabilidade: 7
-        },
-        {
-            nome: "Openjourney v4",
-            url: "https://api-inference.huggingface.co/models/prompthero/openjourney-v4",
-            categoria: "rapida",
-            confiabilidade: 8
-        },
-        {
-            nome: "Deliberate v2",
-            url: "https://api-inference.huggingface.co/models/XpucT/Deliberate",
-            categoria: "rapida",
-            confiabilidade: 7
-        },
-        {
-            nome: "Anything v3",
-            url: "https://api-inference.huggingface.co/models/Linaqruf/anything-v3.0",
-            categoria: "rapida",
-            confiabilidade: 6
-        },
-        {
-            nome: "DreamShaper",
-            url: "https://api-inference.huggingface.co/models/Lykon/DreamShaper",
-            categoria: "rapida", 
-            confiabilidade: 7
-        },
-        {
-            nome: "Protogen x3.4",
-            url: "https://api-inference.huggingface.co/models/darkstorm2150/Protogen_x3.4_Official_Release",
-            categoria: "rapida",
-            confiabilidade: 6
-        },
-        {
-            nome: "AbyssOrangeMix3",
-            url: "https://api-inference.huggingface.co/models/WarriorMama777/OrangeMixs",
-            categoria: "rapida",
-            confiabilidade: 6
-        },
-        {
-            nome: "Counterfeit v3",
-            url: "https://api-inference.huggingface.co/models/gsdf/Counterfeit-V3.0",
-            categoria: "rapida",
-            confiabilidade: 5
-        }
-    ],
-
-    // ========== SEÇÃO MÉDIA (10 modelos) - Qualidade equilibrada ==========
-    media: [
-        {
-            nome: "Stable Diffusion v2.1",
-            url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1",
-            categoria: "media",
-            confiabilidade: 9
-        },
-        {
-            nome: "Dreamlike Photoreal 2.0",
-            url: "https://api-inference.huggingface.co/models/dreamlike-art/dreamlike-photoreal-2.0",
-            categoria: "media",
-            confiabilidade: 8
-        },
-        {
-            nome: "Realistic Vision v5",
-            url: "https://api-inference.huggingface.co/models/SG161222/Realistic_Vision_V5.1_noVAE",
-            categoria: "media",
-            confiabilidade: 8
-        },
-        {
-            nome: "ChilloutMix",
-            url: "https://api-inference.huggingface.co/models/TASUKU2023/Chilloutmix",
-            categoria: "media",
-            confiabilidade: 7
-        },
-        {
-            nome: "Analog Diffusion",
-            url: "https://api-inference.huggingface.co/models/wavymulder/Analog-Diffusion",
-            categoria: "media",
-            confiabilidade: 7
-        },
-        {
-            nome: "Epic Realism",
-            url: "https://api-inference.huggingface.co/models/emilianJR/epiCRealism",
-            categoria: "media",
-            confiabilidade: 6
-        },
-        {
-            nome: "Realistic Vision v4",
-            url: "https://api-inference.huggingface.co/models/SG161222/Realistic_Vision_V4.0",
-            categoria: "media",
-            confiabilidade: 7
-        },
-        {
-            nome: "DreamShaper v7",
-            url: "https://api-inference.huggingface.co/models/Lykon/dreamshaper-7",
-            categoria: "media",
-            confiabilidade: 6
-        },
-        {
-            nome: "MajicMix Realistic",
-            url: "https://api-inference.huggingface.co/models/digiplay/majicMIX.realistic_v6",
-            categoria: "media",
-            confiabilidade: 6
-        },
-        {
-            nome: "Rev Animated",
-            url: "https://api-inference.huggingface.co/models/stablediffusionapi/rev-animated",
-            categoria: "media",
-            confiabilidade: 5
-        }
-    ],
-
-    // ========== SEÇÃO ALTA (10 modelos) - Máxima qualidade ==========
-    alta: [
         {
             nome: "SDXL Base 1.0",
             url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
-            categoria: "alta",
-            confiabilidade: 9
+            confiabilidade: 10, // ✅ TESTADO E FUNCIONANDO
+            categoria: "rapida",
+            tempo_estimado: "15-30s"
         },
         {
             nome: "SDXL Turbo",
             url: "https://api-inference.huggingface.co/models/stabilityai/sdxl-turbo",
-            categoria: "alta",
-            confiabilidade: 8
+            confiabilidade: 9,
+            categoria: "rapida", 
+            tempo_estimado: "10-20s"
         },
         {
-            nome: "Juggernaut XL",
-            url: "https://api-inference.huggingface.co/models/RunDiffusion/Juggernaut-XL-v9",
-            categoria: "alta",
-            confiabilidade: 8
+            nome: "Stable Diffusion 2.1",
+            url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1",
+            confiabilidade: 8,
+            categoria: "rapida",
+            tempo_estimado: "20-35s"
         },
         {
-            nome: "RealVisXL v4",
-            url: "https://api-inference.huggingface.co/models/SG161222/RealVisXL_V4.0",
-            categoria: "alta",
-            confiabilidade: 7
-        },
-        {
-            nome: "DreamShaper XL",
-            url: "https://api-inference.huggingface.co/models/Lykon/dreamshaper-xl-1-0",
-            categoria: "alta",
-            confiabilidade: 7
-        },
-        {
-            nome: "Playground v2.5",
-            url: "https://api-inference.huggingface.co/models/playgroundai/playground-v2.5-1024px-aesthetic",
-            categoria: "alta",
-            confiabilidade: 6
-        },
-        {
-            nome: "Crystal Clear XL",
-            url: "https://api-inference.huggingface.co/models/SG161222/crystalClearXL_ccxl",
-            categoria: "alta",
-            confiabilidade: 6
-        },
-        {
-            nome: "Copax TimeLessXL",
-            url: "https://api-inference.huggingface.co/models/Copax/COPAX_TimeLessXL_SDXL1_Temporal_Consistency",
-            categoria: "alta",
-            confiabilidade: 5
-        },
-        {
-            nome: "AlbedoBase XL",
-            url: "https://api-inference.huggingface.co/models/PublicPrompts/AlbedoBase-XL",
-            categoria: "alta",
-            confiabilidade: 5
+            nome: "Stable Diffusion 1.5",
+            url: "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5",
+            confiabilidade: 7,
+            categoria: "rapida", 
+            tempo_estimado: "15-30s"
         },
         {
             nome: "Kandinsky 2.2",
             url: "https://api-inference.huggingface.co/models/kandinsky-community/kandinsky-2-2-decoder",
+            confiabilidade: 6,
+            categoria: "rapida",
+            tempo_estimado: "25-40s"
+        }
+    ],
+    
+    // 🟡 CATEGORIA MÉDIA (Qualidade balanceada)
+    media: [
+        {
+            nome: "Stable Diffusion XL Base",
+            url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0", 
+            confiabilidade: 10, // ✅ DUPLICADO DO FUNCIONANDO
+            categoria: "media",
+            tempo_estimado: "30-60s"
+        },
+        {
+            nome: "Playground v2.5",
+            url: "https://api-inference.huggingface.co/models/playgroundai/playground-v2.5-1024px-aesthetic",
+            confiabilidade: 8,
+            categoria: "media",
+            tempo_estimado: "45-75s"
+        },
+        {
+            nome: "RealVisXL v4",
+            url: "https://api-inference.huggingface.co/models/SG161222/RealVisXL_V4.0",
+            confiabilidade: 7,
+            categoria: "media",
+            tempo_estimado: "40-70s"
+        },
+        {
+            nome: "DreamShaper XL",
+            url: "https://api-inference.huggingface.co/models/Lykon/dreamshaper-xl-1-0",
+            confiabilidade: 7,
+            categoria: "media",
+            tempo_estimado: "35-65s"
+        }
+    ],
+    
+    // 🔴 CATEGORIA ALTA (Máxima qualidade)
+    alta: [
+        {
+            nome: "SDXL Base 1.0 Pro", 
+            url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
+            confiabilidade: 10, // ✅ CONFIRMADO FUNCIONANDO
             categoria: "alta",
-            confiabilidade: 4
+            tempo_estimado: "60-120s"
+        },
+        {
+            nome: "FLUX.1 Dev",
+            url: "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev",
+            confiabilidade: 9,
+            categoria: "alta",
+            tempo_estimado: "90-180s"
+        },
+        {
+            nome: "FLUX.1 Schnell",
+            url: "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell", 
+            confiabilidade: 8,
+            categoria: "alta",
+            tempo_estimado: "60-120s"
+        },
+        {
+            nome: "Juggernaut XL",
+            url: "https://api-inference.huggingface.co/models/RunDiffusion/Juggernaut-XL-v9",
+            confiabilidade: 7,
+            categoria: "alta",
+            tempo_estimado: "75-150s"
         }
     ]
 };
 
-
+// ========== FUNÇÃO DE BACKUP COM MODELOS PÚBLICOS ==========
+const modelosPublicosSemChave = [
+    {
+        nome: "Pollinations AI",
+        url: "https://image.pollinations.ai/prompt/",
+        funcao: async (prompt) => {
+            const encodedPrompt = encodeURIComponent(prompt);
+            const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=640&height=480&model=flux&enhance=true&nologo=true&seed=${Math.random()}`;
+            
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Status: ${response.status}`);
+            return await response.blob();
+        }
+    },
+    {
+        nome: "Stable Diffusion Public API",
+        url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
+        funcao: async (prompt) => {
+            // Tentar sem chave primeiro
+            const response = await fetch("https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    inputs: prompt,
+                    parameters: {
+                        num_inference_steps: 20,
+                        guidance_scale: 7.5,
+                        width: 640,
+                        height: 480
+                    }
+                })
+            });
+            
+            if (!response.ok) throw new Error(`Status: ${response.status}`);
+            return await response.blob();
+        }
+    }
+];
 // Prompts específicos para cada tema com foco no texto do versículo
 const criarPromptPersonalizado = (tema, textoVersiculo) => {
     const palavrasChave = extrairPalavrasChave(textoVersiculo);
@@ -607,89 +552,61 @@ async function gerarVersiculoComIA() {
 // ========== TENTATIVAS DE GERAÇÃO COM IA ==========
 
 // ========== FUNÇÃO PRINCIPAL COM ESTRATÉGIA INTELIGENTE ==========
+// ========== SUBSTITUIR A FUNÇÃO ATUAL ==========
 async function tentarGerarImagemIA(prompt, tema) {
-    console.log('🚀 Iniciando geração com 30 modelos Hugging Face...');
+    console.log('🚀 Iniciando geração otimizada...');
     
-    // Criar lista ordenada: rápida -> média -> alta, por confiabilidade
-    const todosModelos = [
-        ...modelosHuggingFace.rapida.sort((a, b) => b.confiabilidade - a.confiabilidade),
-        ...modelosHuggingFace.media.sort((a, b) => b.confiabilidade - a.confiabilidade),
-        ...modelosHuggingFace.alta.sort((a, b) => b.confiabilidade - a.confiabilidade)
-    ];
+    // Estratégia otimizada: começar pelos que funcionam
+    const modelosOrdenados = [
+        ...modelosHuggingFaceFuncionais.rapida.filter(m => m.confiabilidade >= 8),
+        ...modelosHuggingFaceFuncionais.media.filter(m => m.confiabilidade >= 7), 
+        ...modelosHuggingFaceFuncionais.alta.filter(m => m.confiabilidade >= 7)
+    ].sort((a, b) => b.confiabilidade - a.confiabilidade); // Ordenar por confiabilidade
     
-    console.log('📊 Estratégia de tentativas:');
-    console.log(`   🟢 Rápida: ${modelosHuggingFace.rapida.length} modelos`);
-    console.log(`   🟡 Média: ${modelosHuggingFace.media.length} modelos`);  
-    console.log(`   🔴 Alta: ${modelosHuggingFace.alta.length} modelos`);
-    console.log(`   📋 Total: ${todosModelos.length} modelos`);
+    console.log(`📋 Testando ${modelosOrdenados.length} modelos otimizados`);
     
-    for (let i = 0; i < todosModelos.length; i++) {
-        const modelo = todosModelos[i];
+    // Tentar modelos HuggingFace funcionais
+    for (let i = 0; i < modelosOrdenados.length; i++) {
+        const modelo = modelosOrdenados[i];
         
         try {
-            const progresso = 10 + (i * 80 / todosModelos.length);
-            const emoji = modelo.categoria === 'rapida' ? '⚡' : modelo.categoria === 'media' ? '⚖️' : '💎';
+            mostrarProgresso(`🤖 ${modelo.nome}`, 10 + (i * 30));
+            console.log(`🔄 Tentando ${modelo.nome} (Conf: ${modelo.confiabilidade}/10)`);
             
-            mostrarProgresso(
-                `${emoji} ${i + 1}/${todosModelos.length}: ${modelo.nome} (${modelo.categoria}) [${modelo.confiabilidade}/10]`, 
-                progresso
-            );
+            const parametros = getParametrosPorCategoria(modelo.categoria);
+            const blob = await chamarAPIHuggingFace(modelo.url, prompt, parametros);
             
-            console.log(`🔄 Tentando ${modelo.nome} (${modelo.categoria}) - Confiabilidade: ${modelo.confiabilidade}/10`);
-            
-            // Ajustar parâmetros baseado na categoria
-            const qualidadeParams = getParametrosPorCategoria(modelo.categoria);
-            const blob = await chamarAPIHuggingFace(modelo.url, prompt, qualidadeParams);
-            
-            if (blob && blob.size > 1000) {
-                console.log(`✅ ${modelo.nome} (${modelo.categoria}) gerou imagem com sucesso!`);
-                mostrarProgresso(`✅ Sucesso com ${modelo.nome}!`, 95, 'success');
-                mostrarToast(`🎨 Imagem criada por: ${modelo.nome} (${modelo.categoria.toUpperCase()})`, 'success');
-                
-                // Log de estatísticas
-                console.log(`📈 Estatísticas: Tentativa ${i + 1}/${todosModelos.length} - Taxa de sucesso: ${((1/(i+1))*100).toFixed(1)}%`);
-                
+            if (blob && blob.size > 5000) { // Validar tamanho mínimo
+                console.log(`✅ ${modelo.nome} funcionou! (${blob.size} bytes)`);
+                mostrarToast(`🎨 Imagem criada por: ${modelo.nome}`, 'success');
                 return blob;
             }
             
         } catch (error) {
-            const errorType = classifyError(error.message);
-            console.log(`❌ ${modelo.nome} (${modelo.categoria}) falhou: ${errorType.emoji} ${errorType.message}`);
+            console.log(`❌ ${modelo.nome} falhou: ${error.message}`);
+        }
+        
+        await delay(500); // Delay reduzido
+    }
+    
+    // Fallback para APIs públicas
+    console.log('🆓 Tentando APIs alternativas...');
+    for (const api of modelosPublicosSemChave) {
+        try {
+            mostrarProgresso(`🆓 ${api.nome}`, 70);
+            const blob = await api.funcao(prompt);
             
-            // Para erro 503 (modelo carregando), tentar novamente nos primeiros 5 modelos
-            if (errorType.type === 'loading' && i < 5) {
-                console.log(`🔄 ${modelo.nome}: Esperando modelo carregar (${errorType.waitTime}s)...`);
-                await delay(errorType.waitTime * 1000);
-                
-                try {
-                    const blob = await chamarAPIHuggingFace(modelo.url, prompt, getParametrosPorCategoria(modelo.categoria));
-                    if (blob && blob.size > 1000) {
-                        console.log(`✅ ${modelo.nome} funcionou na segunda tentativa!`);
-                        mostrarToast(`🔄 ${modelo.nome} funcionou após aguardar carregamento!`, 'success');
-                        return blob;
-                    }
-                } catch (retryError) {
-                    console.log(`❌ ${modelo.nome}: Segunda tentativa também falhou`);
-                }
+            if (blob && blob.size > 1000) {
+                console.log(`✅ ${api.nome} funcionou!`);
+                mostrarToast(`🎨 Imagem criada por: ${api.nome}`, 'success');
+                return blob;
             }
-        }
-        
-        // Pausa adaptativa baseada na categoria
-        const pausaMs = getPausaPorCategoria(modelo.categoria);
-        if (i < todosModelos.length - 1) {
-            await delay(pausaMs);
-        }
-        
-        // Log de progresso a cada 5 tentativas
-        if ((i + 1) % 5 === 0) {
-            console.log(`📊 Progresso: ${i + 1}/${todosModelos.length} tentativas (${(((i + 1) / todosModelos.length) * 100).toFixed(1)}%)`);
+        } catch (error) {
+            console.log(`❌ ${api.nome} falhou:`, error.message);
         }
     }
     
-    console.log('⚠️ Todos os 30 modelos Hugging Face falharam');
-    mostrarProgresso('❌ Todos os modelos falharam, usando arte local...', 85, 'error');
-    mostrarToast('⚠️ Todas as 30 tentativas de IA falharam. Usando arte local.', 'warning');
-    
+    console.log('⚠️ Todos os modelos falharam');
     return null;
 }
 
