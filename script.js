@@ -1,5 +1,5 @@
 // ========== CONFIGURAÇÃO DA API ==========
-const HUGGING_FACE_API_KEY = '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'; // Substitua pela sua chave
+const HUGGING_FACE_API_KEY = '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'; // Substitua pela sua chave
 
 // Se não tiver chave, pode usar esta temporária (limitada):
 // const HUGGING_FACE_API_KEY = 'hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
@@ -675,7 +675,7 @@ async function chamarAPIHuggingFace(modelUrl, prompt, parametros) {
 }
 
 // ========== CONFIGURAÇÃO OPCIONAL DA CHAVE ==========
- const HUGGING_FACE_API_KEY = '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';
+ //const HUGGING_FACE_API_KEY = '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';
 // ========== PROCESSAMENTO DA IMAGEM FINAL ==========
 async function processarImagemFinal(imageBlob) {
     return new Promise((resolve) => {
