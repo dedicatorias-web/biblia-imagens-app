@@ -1,3 +1,9 @@
+// ========== CONFIGURAÇÃO DA API ==========
+const HUGGING_FACE_API_KEY = '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'; // Substitua pela sua chave
+
+// Se não tiver chave, pode usar esta temporária (limitada):
+// const HUGGING_FACE_API_KEY = 'hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+
 // ========== DEBUG - VERIFICAR ELEMENTOS ==========
 console.log('🔍 INICIANDO DEBUG...');
 
@@ -319,62 +325,38 @@ async function tentarGerarImagemIA(prompt, tema) {
 }
 ////////////////////////////////////////
 async function chamarAPIHuggingFace(modelUrl, prompt, qualidade) {
-    console.log('🤖 Tentando gerar com IA gratuita...');
+    const parametros = {
+        rapida: { steps: 15, width: 512, height: 384 },
+        media: { steps: 20, width: 640, height: 480 },
+        alta: { steps: 25, width: 768, height: 576 }
+    };
     
-    try {
-        // Usar API gratuita do Pollinations (sem necessidade de chave)
-        const response = await fetch('https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt) + '?width=800&height=600&model=flux&enhance=true', {
-            method: 'GET',
-            headers: {
-                'Accept': 'image/*'
+    const config = parametros[qualidade] || parametros.media;
+    
+    const response = await fetch(modelUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${HUGGING_FACE_API_KEY}` // ← CHAVE RESTAURADA
+        },
+        body: JSON.stringify({
+            inputs: prompt,
+            parameters: {
+                num_inference_steps: config.steps,
+                guidance_scale: 7.5,
+                width: config.width,
+                height: config.height
             }
-        });
-        
-        console.log('📡 Status Pollinations:', response.status);
-        
-        if (response.ok) {
-            const blob = await response.blob();
-            console.log('✅ Imagem IA gerada com sucesso!');
-            return blob;
-        }
-        
-        throw new Error(`Status: ${response.status}`);
-        
-    } catch (error) {
-        console.log('⚠️ Pollinations falhou, tentando alternativa...');
-        
-        try {
-            // Alternativa: Craiyon API (também gratuita)
-            const craiyonResponse = await fetch('https://api.craiyon.com/v3', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    prompt: prompt,
-                    model: 'photo',
-                    negative_prompt: 'text, watermark, signature, blurry'
-                })
-            });
-            
-            if (craiyonResponse.ok) {
-                const data = await craiyonResponse.json();
-                if (data.images && data.images.length > 0) {
-                    // Converter base64 para blob
-                    const base64 = data.images[0];
-                    const response = await fetch(`data:image/jpeg;base64,${base64}`);
-                    const blob = await response.blob();
-                    console.log('✅ Imagem alternativa gerada!');
-                    return blob;
-                }
-            }
-            
-        } catch (altError) {
-            console.log('⚠️ Todas as APIs falharam:', altError.message);
-        }
-        
-        throw new Error('Todas as APIs indisponíveis');
+        })
+    });
+    
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
+    
+    const blob = await response.blob();
+    return blob;
 }
 // ========== PROCESSAMENTO DA IMAGEM FINAL ==========
 async function processarImagemFinal(imageBlob) {
