@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Versículos em Imagem</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📖 Versículos Bíblicos</h1>
+            <p>Gere e compartilhe imagens inspiradoras</p>
+        </header>
+
+        <main>
+            <div class="controls">
+                <button id="gerarVersiculo">🎲 Novo Versículo</button>
+                <select id="temaEscolhido">
+                    <option value="esperanca">Esperança</option>
+                    <option value="amor">Amor</option>
+                    <option value="paz">Paz</option>
+                    <option value="fe">Fé</option>
+                </select>
+            </div>
+
+            <div class="image-container">
+                <canvas id="canvasImagem" width="800" height="600"></canvas>
+            </div>
+
+            <div class="share-buttons">
+                <button id="baixarImagem">💾 Baixar</button>
+                <button id="compartilharWhatsApp">📱 WhatsApp</button>
+            </div>
+
+            <div class="versiculo-info">
+                <p id="versiculoTexto"></p>
+                <p id="versiculoReferencia"></p>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
