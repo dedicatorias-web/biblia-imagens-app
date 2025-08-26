@@ -42,9 +42,9 @@ let imagemAtualBlob = null;
 
 // ========== CORREÇÃO: MODELOS GRATUITOS ==========
 const modelosHuggingFace = {
-    rapida: "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4",
-    media: "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5", 
-    alta: "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4"
+    rapida: "pollinations", // Usar Pollinations para todas
+    media: "pollinations",
+    alta: "pollinations"
 };
 
 // Prompts específicos para cada tema com foco no texto do versículo
@@ -292,99 +292,88 @@ async function gerarVersiculoComIA() {
 
 // ========== TENTATIVAS DE GERAÇÃO COM IA ==========
 async function tentarGerarImagemIA(prompt, tema) {
-    const qualidade = document.getElementById('qualidadeImagem')?.value || 'media';
-    const maxTentativas = 3;
+    const qualidades = ['rapida', 'media'];
     
-    // Lista de modelos para tentar em ordem
-    const modelosParaTentar = [
-        { nome: 'Stable Diffusion 2.1', url: modelosHuggingFace.media },
-        { nome: 'Stable Diffusion 1.5', url: modelosHuggingFace.rapida },
-        { nome: 'Stable Diffusion XL', url: modelosHuggingFace.alta }
-    ];
-    
-    for (let tentativa = 0; tentativa < maxTentativas; tentativa++) {
-        const modelo = modelosParaTentar[tentativa];
-        
+    for (let i = 0; i < qualidades.length; i++) {
         try {
-            mostrarProgresso(`🤖 Tentativa ${tentativa + 1}: ${modelo.nome}...`, 30 + (tentativa * 15));
+            mostrarProgresso(`🤖 Tentativa ${i + 1}: Gerando com IA...`, 40 + (i * 20));
             
-            const resultado = await chamarAPIHuggingFace(modelo.url, prompt, qualidade);
+            const blob = await chamarAPIHuggingFace('pollinations', prompt, qualidades[i]);
             
-            if (resultado) {
-                mostrarProgresso(`✅ Sucesso com ${modelo.nome}!`, 70);
-                return resultado;
-            }
-            
-            // Se falhou, aguardar antes da próxima tentativa
-            if (tentativa < maxTentativas - 1) {
-                mostrarProgresso(`⏳ Aguardando para próxima tentativa...`, 35 + (tentativa * 15));
-                await delay(3000); // 3 segundos entre tentativas
+            if (blob && blob.size > 1000) {
+                console.log('✅ IA gerou imagem com sucesso!');
+                return blob;
             }
             
         } catch (error) {
-            console.error(`Erro na tentativa ${tentativa + 1}:`, error);
-            
-            if (tentativa < maxTentativas - 1) {
-                mostrarProgresso(`⚠️ Tentativa ${tentativa + 1} falhou, tentando outro modelo...`, 40 + (tentativa * 10));
-                await delay(2000);
-            }
+            console.log(`Tentativa ${i + 1} falhou:`, error.message);
+        }
+        
+        if (i < qualidades.length - 1) {
+            await delay(1000);
         }
     }
     
-    mostrarProgresso('❌ Todas as tentativas de IA falharam, usando arte local...', 60);
+    console.log('⚠️ Todas as tentativas de IA falharam');
     return null;
 }
-
-// ========== CORREÇÃO: USAR MODELOS GRATUITOS SEM AUTENTICAÇÃO ==========
+////////////////////////////////////////
 async function chamarAPIHuggingFace(modelUrl, prompt, qualidade) {
-    const parametros = {
-        rapida: { steps: 15, width: 512, height: 384 },
-        media: { steps: 20, width: 640, height: 480 },
-        alta: { steps: 25, width: 768, height: 576 }
-    };
-    
-    const config = parametros[qualidade] || parametros.media;
+    console.log('🤖 Tentando gerar com IA gratuita...');
     
     try {
-        // Usar modelo gratuito e público
-        const modeloGratuito = "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4";
-        
-        const response = await fetch(modeloGratuito, {
-            method: 'POST',
+        // Usar API gratuita do Pollinations (sem necessidade de chave)
+        const response = await fetch('https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt) + '?width=800&height=600&model=flux&enhance=true', {
+            method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
-                // Removido header de Authorization que causava erro 401
-            },
-            body: JSON.stringify({
-                inputs: prompt,
-                parameters: {
-                    num_inference_steps: config.steps,
-                    guidance_scale: 7.5,
-                    width: config.width,
-                    height: config.height
-                }
-            })
+                'Accept': 'image/*'
+            }
         });
         
-        console.log('📡 Status da resposta:', response.status);
+        console.log('📡 Status Pollinations:', response.status);
         
-        if (!response.ok) {
-            console.log('⚠️ Erro na API, usando arte local...');
-            throw new Error(`HTTP ${response.status}`);
+        if (response.ok) {
+            const blob = await response.blob();
+            console.log('✅ Imagem IA gerada com sucesso!');
+            return blob;
         }
         
-        const blob = await response.blob();
-        console.log('📦 Blob recebido:', blob.size, 'bytes');
-        
-        if (blob.size < 1000) {
-            throw new Error('Imagem muito pequena');
-        }
-        
-        return blob;
+        throw new Error(`Status: ${response.status}`);
         
     } catch (error) {
-        console.log('⚠️ API falhou, continuando com arte local:', error.message);
-        throw error;
+        console.log('⚠️ Pollinations falhou, tentando alternativa...');
+        
+        try {
+            // Alternativa: Craiyon API (também gratuita)
+            const craiyonResponse = await fetch('https://api.craiyon.com/v3', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    prompt: prompt,
+                    model: 'photo',
+                    negative_prompt: 'text, watermark, signature, blurry'
+                })
+            });
+            
+            if (craiyonResponse.ok) {
+                const data = await craiyonResponse.json();
+                if (data.images && data.images.length > 0) {
+                    // Converter base64 para blob
+                    const base64 = data.images[0];
+                    const response = await fetch(`data:image/jpeg;base64,${base64}`);
+                    const blob = await response.blob();
+                    console.log('✅ Imagem alternativa gerada!');
+                    return blob;
+                }
+            }
+            
+        } catch (altError) {
+            console.log('⚠️ Todas as APIs falharam:', altError.message);
+        }
+        
+        throw new Error('Todas as APIs indisponíveis');
     }
 }
 // ========== PROCESSAMENTO DA IMAGEM FINAL ==========
