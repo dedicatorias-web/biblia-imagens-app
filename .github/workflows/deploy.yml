@@ -2,14 +2,17 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
+  workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -22,20 +25,24 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       
-    - name: Create config file with secrets
+    - name: Create config file with API key
       run: |
-        echo "window.CONFIG = {" > config.js
+        echo "🔧 Gerando config.js com chave segura..."
+        echo "console.log('🔑 CONFIG carregado via GitHub Actions');" > config.js
+        echo "window.CONFIG = {" >> config.js
         echo "  HUGGING_FACE_API_KEY: '${{ secrets.HUGGING_FACE_API_KEY }}'" >> config.js
         echo "};" >> config.js
+        echo "✅ Config gerado com sucesso"
+        ls -la config.js
         
     - name: Setup Pages
-      uses: actions/configure-pages@v4
+      uses: actions/configure-pages@v5
       
     - name: Upload artifact
-      uses: actions/upload-pages-artifact@v2
+      uses: actions/upload-pages-artifact@v3  # ← VERSÃO CORRIGIDA
       with:
         path: '.'
         
     - name: Deploy to GitHub Pages
       id: deployment
-      uses: actions/deploy-pages@v3
+      uses: actions/deploy-pages@v4  # ← VERSÃO CORRIGIDA
