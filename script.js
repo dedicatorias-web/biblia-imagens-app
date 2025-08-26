@@ -3,21 +3,26 @@ let versiculos = {};
 let versiculoAtual = null;
 let imagemAtualBlob = null;
 
-// Prompts para estilo barroco baseados no tema
-const promptsBarrocos = {
-    esperanca: "baroque masterpiece oil painting, divine golden light streaming through dramatic clouds, heavenly rays illuminating peaceful landscape, ornate religious symbolism, dramatic chiaroscuro lighting, renaissance style, warm golden atmosphere, intricate baroque details, hope and faith theme",
-    
-    amor: "baroque oil painting, cherubs and angels in warm golden light, romantic divine scene with ornate decorative elements, dramatic shadows and highlights, renaissance masterpiece style, divine love symbolism, rich warm colors, classical religious composition",
-    
-    paz: "baroque landscape painting, serene pastoral scene with soft divine light, white doves flying, olive branches, peaceful countryside, dramatic sky with golden clouds, classical composition, warm earth tones, baroque religious art style",
-    
-    fe: "baroque religious painting, praying hands in divine light from above, magnificent cathedral interior, ornate gothic architecture, dramatic lighting, spiritual golden symbolism, classical religious art, baroque masterpiece composition",
-    
-    sabedoria: "baroque portrait style, ancient wisdom symbols, ornate scrolls and ancient books, wise owl, warm candlelight, classical library with baroque architecture, dramatic chiaroscuro, rich golden tones, renaissance masterpiece",
-    
-    forca: "baroque heroic painting, powerful figure in classical pose, divine light breaking through stormy clouds, ornate elements, dynamic composition, renaissance style, dramatic shadows and highlights, biblical strength symbolism",
-    
-    protecao: "baroque religious masterpiece, guardian angel with golden wings spread wide, protective divine light, heavenly setting, ornate baroque composition, warm celestial lighting, classical religious art style"
+// Coleções de imagens por tema do Unsplash via Picsum
+const imagensPorTema = {
+    esperanca: [1015, 1016, 1025, 1039, 1041, 1043, 1044, 1048, 1051, 1063],
+    amor: [1073, 1074, 1075, 1076, 1077, 1079, 1080, 1081, 1082, 1084],
+    paz: [1018, 1019, 1020, 1021, 1024, 1026, 1027, 1029, 1031, 1036],
+    fe: [1067, 1068, 1069, 1070, 1071, 1072, 1078, 1083, 1085, 1086],
+    sabedoria: [159, 160, 161, 162, 163, 164, 165, 166, 167, 168],
+    forca: [146, 147, 148, 149, 150, 151, 152, 153, 154, 155],
+    protecao: [137, 138, 139, 140, 141, 142, 143, 144, 145, 156]
+};
+
+// Filtros artísticos por tema
+const filtrosArtisticos = {
+    esperanca: { sepia: 0.3, saturate: 1.4, brightness: 1.2, hue: 45 },
+    amor: { sepia: 0.2, saturate: 1.6, brightness: 1.1, hue: 320 },
+    paz: { sepia: 0.1, saturate: 1.2, brightness: 1.3, hue: 200 },
+    fe: { sepia: 0.4, saturate: 1.3, brightness: 1.1, hue: 260 },
+    sabedoria: { sepia: 0.6, saturate: 1.1, brightness: 0.9, hue: 30 },
+    forca: { sepia: 0.2, saturate: 1.5, brightness: 1.0, hue: 0 },
+    protecao: { sepia: 0.3, saturate: 1.3, brightness: 1.2, hue: 120 }
 };
 
 // ========== INICIALIZAÇÃO ==========
@@ -30,8 +35,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ========== EVENT LISTENERS ==========
 function configurarEventListeners() {
-    document.getElementById('gerarVersiculo').addEventListener('click', gerarVersiculoComIA);
-    document.getElementById('temaEscolhido').addEventListener('change', gerarVersiculoComIA);
+    document.getElementById('gerarVersiculo').addEventListener('click', gerarVersiculoComImagem);
+    document.getElementById('temaEscolhido').addEventListener('change', gerarVersiculoComImagem);
     document.getElementById('baixarImagem').addEventListener('click', baixarImagem);
     document.getElementById('compartilharWhatsApp').addEventListener('click', compartilharWhatsApp);
     document.getElementById('copiarTexto').addEventListener('click', copiarTexto);
@@ -48,15 +53,15 @@ async function carregarVersiculos() {
     try {
         const response = await fetch('versiculos.json');
         versiculos = await response.json();
-        gerarVersiculoComIA();
+        gerarVersiculoComImagem();
     } catch (error) {
         console.error('Erro ao carregar versículos:', error);
         mostrarToast('❌ Erro ao carregar versículos');
     }
 }
 
-// ========== GERAÇÃO DE VERSÍCULOS E IA ==========
-async function gerarVersiculoComIA() {
+// ========== GERAÇÃO DE VERSÍCULOS ==========
+async function gerarVersiculoComImagem() {
     const tema = document.getElementById('temaEscolhido').value;
     const versiculosTema = versiculos[tema];
     
@@ -71,186 +76,299 @@ async function gerarVersiculoComIA() {
     document.getElementById('versiculoTexto').textContent = `"${versiculoAtual.texto}"`;
     document.getElementById('versiculoReferencia').textContent = versiculoAtual.referencia;
     
-    await gerarImagemIA(tema);
+    await gerarImagemArtistica(tema);
     incrementarContador();
 }
 
-async function gerarImagemIA(tema) {
+async function gerarImagemArtistica(tema) {
     try {
         const botaoGerar = document.getElementById('gerarVersiculo');
         botaoGerar.disabled = true;
-        botaoGerar.textContent = '🎨 Gerando arte...';
+        botaoGerar.textContent = '🎨 Criando arte...';
         
-        mostrarProgresso('🎨 Criando obra barroca...', 20);
+        mostrarProgresso('🎨 Selecionando imagem inspiradora...', 20);
         
-        const prompt = criarPromptCompleto(tema);
+        // Selecionar imagem aleatória do tema
+        const imagensDoTema = imagensPorTema[tema];
+        const imagemId = imagensDoTema[Math.floor(Math.random() * imagensDoTema.length)];
+        
         const qualidade = document.getElementById('qualidadeImagem').value;
-        
-        // Configurações baseadas na qualidade
-        const config = {
-            rapida: { width: 512, height: 384, steps: 20 },
-            media: { width: 768, height: 512, steps: 30 },
-            alta: { width: 1024, height: 768, steps: 40 }
+        const dimensoes = {
+            rapida: { w: 600, h: 400 },
+            media: { w: 800, h: 600 },
+            alta: { w: 1200, h: 800 }
         };
         
-        const { width, height } = config[qualidade];
+        const { w, h } = dimensoes[qualidade];
         
-        mostrarProgresso('🤖 Processando com IA...', 60);
+        // URL da imagem do Picsum (sempre funciona)
+        const imageUrl = `https://picsum.photos/id/${imagemId}/${w}/${h}`;
         
-        // URL do Pollinations AI (gratuito, sem API key)
-        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${width}&height=${height}&seed=${Math.floor(Math.random() * 1000000)}&enhance=true&nologo=true`;
-        
-        console.log('Gerando imagem com prompt:', prompt);
-        
-        mostrarProgresso('✨ Finalizando obra...', 90);
+        mostrarProgresso('🖼️ Carregando imagem base...', 50);
         
         // Carregar imagem
         const img = new Image();
         img.crossOrigin = 'anonymous';
         
-        img.onload = async function() {
-            // Converter para blob
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            ctx.drawImage(img, 0, 0);
+        img.onload = function() {
+            mostrarProgresso('✨ Aplicando filtros artísticos...', 80);
+            criarImagemComFiltros(img, tema);
             
-            canvas.toBlob(async (blob) => {
-                imagemAtualBlob = blob;
-                await criarImagemFinal(blob);
-                mostrarProgresso('🙏 Obra concluída!', 100);
-                
-                setTimeout(() => {
-                    const status = document.getElementById('generationStatus');
-                    if (status) status.classList.add('hidden');
-                }, 2000);
-                
-                mostrarToast('✅ Imagem sagrada criada!');
-                
-                botaoGerar.disabled = false;
-                botaoGerar.textContent = '🎨 Gerar Nova Imagem';
-            }, 'image/png');
+            mostrarProgresso('🙏 Finalizando obra sagrada...', 100);
+            
+            setTimeout(() => {
+                const status = document.getElementById('generationStatus');
+                if (status) status.classList.add('hidden');
+            }, 2000);
+            
+            mostrarToast('✅ Obra de arte criada!');
         };
         
         img.onerror = function() {
-            console.error('Erro ao carregar imagem da IA');
-            criarImagemSemIA();
-            mostrarToast('⚠️ Usando estilo alternativo');
-            
-            botaoGerar.disabled = false;
-            botaoGerar.textContent = '🎨 Gerar Nova Imagem';
-            
-            const status = document.getElementById('generationStatus');
-            if (status) status.classList.add('hidden');
+            console.error('Erro ao carregar imagem');
+            criarImagemGradienteAvancado(tema);
+            mostrarToast('⚠️ Usando arte generativa');
         };
         
         img.src = imageUrl;
         
     } catch (error) {
-        console.error('Erro ao gerar imagem:', error);
-        criarImagemSemIA();
-        mostrarToast('⚠️ Usando modo offline');
-        
+        console.error('Erro:', error);
+        criarImagemGradienteAvancado(tema);
+        mostrarToast('⚠️ Usando modo artístico');
+    } finally {
         const botaoGerar = document.getElementById('gerarVersiculo');
         botaoGerar.disabled = false;
-        botaoGerar.textContent = '🎨 Gerar Nova Imagem';
-        
-        const status = document.getElementById('generationStatus');
-        if (status) status.classList.add('hidden');
+        botaoGerar.textContent = '🎨 Gerar Nova Arte';
     }
 }
 
-function criarPromptCompleto(tema) {
-    const promptBase = promptsBarrocos[tema];
-    const palavrasChave = extrairPalavrasChave(versiculoAtual.texto);
-    
-    return `${promptBase}, biblical inspiration: ${palavrasChave}, masterpiece quality, highly detailed, professional religious art, no text, no words, clean composition, 8k resolution`;
-}
-
-function extrairPalavrasChave(texto) {
-    const ignorar = [
-        'para', 'porque', 'senhor', 'deus', 'seja', 'está', 'como', 'todo', 'mais', 'pelo', 'pela',
-        'uma', 'dos', 'das', 'com', 'não', 'que', 'ele', 'ela', 'seu', 'sua', 'nos', 'nas'
-    ];
-    
-    const palavrasImportantes = texto.toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .split(/[,.;:!?\s]+/)
-        .filter(palavra => palavra.length > 3)
-        .filter(palavra => !ignorar.includes(palavra))
-        .slice(0, 4);
-    
-    return palavrasImportantes.join(', ');
-}
-
-async function criarImagemFinal(imageBlob) {
-    return new Promise((resolve) => {
-        const canvas = document.getElementById('canvasImagem');
-        const ctx = canvas.getContext('2d');
-        
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        const img = new Image();
-        img.onload = function() {
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            adicionarOverlayTexto(ctx);
-            adicionarTextoSobreImagem(ctx);
-            resolve();
-        };
-        
-        img.src = URL.createObjectURL(imageBlob);
-    });
-}
-
-function criarImagemSemIA() {
+function criarImagemComFiltros(img, tema) {
     const canvas = document.getElementById('canvasImagem');
     const ctx = canvas.getContext('2d');
     
-    const coresTema = {
-        esperanca: ['#FFD700', '#FF8C00', '#FFA500'],
-        amor: ['#FF69B4', '#FF1493', '#DC143C'],
-        paz: ['#87CEEB', '#4682B4', '#6495ED'],
-        fe: ['#9370DB', '#8A2BE2', '#9932CC'],
-        sabedoria: ['#DAA520', '#B8860B', '#CD853F'],
-        forca: ['#DC143C', '#B22222', '#8B0000'],
-        protecao: ['#32CD32', '#228B22', '#006400']
+    // Limpar canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Aplicar filtros CSS
+    const filtro = filtrosArtisticos[tema];
+    ctx.filter = `sepia(${filtro.sepia}) saturate(${filtro.saturate}) brightness(${filtro.brightness}) hue-rotate(${filtro.hue}deg) contrast(1.1)`;
+    
+    // Desenhar imagem com filtro
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    
+    // Reset filtro
+    ctx.filter = 'none';
+    
+    // Adicionar overlay artístico
+    adicionarOverlayArtistico(ctx, tema);
+    
+    // Adicionar padrões decorativos sutis
+    adicionarPadroesDecorativosSubtis(ctx, tema);
+    
+    // Adicionar texto
+    adicionarOverlayTexto(ctx);
+    adicionarTextoSobreImagem(ctx);
+}
+
+function adicionarOverlayArtistico(ctx, tema) {
+    const canvas = ctx.canvas;
+    
+    // Overlay sutil para dar profundidade
+    const gradient = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, 0,
+        canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 2
+    );
+    
+    const coresOverlay = {
+        esperanca: 'rgba(255, 215, 0, 0.1)',
+        amor: 'rgba(255, 105, 180, 0.1)',
+        paz: 'rgba(135, 206, 235, 0.1)',
+        fe: 'rgba(147, 112, 219, 0.1)',
+        sabedoria: 'rgba(218, 165, 32, 0.1)',
+        forca: 'rgba(220, 20, 60, 0.1)',
+        protecao: 'rgba(50, 205, 50, 0.1)'
     };
     
-    const tema = document.getElementById('temaEscolhido').value;
-    const cores = coresTema[tema] || ['#667eea', '#764ba2', '#5a67d8'];
-    
-    // Criar gradiente radial mais complexo
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radius = Math.max(canvas.width, canvas.height) / 2;
-    
-    const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-    gradient.addColorStop(0, cores[0]);
-    gradient.addColorStop(0.5, cores[1]);
-    gradient.addColorStop(1, cores[2]);
+    gradient.addColorStop(0, 'rgba(0,0,0,0)');
+    gradient.addColorStop(0.7, coresOverlay[tema] || 'rgba(0,0,0,0.05)');
+    gradient.addColorStop(1, 'rgba(0,0,0,0.2)');
     
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function adicionarPadroesDecorativosSubtis(ctx, tema) {
+    ctx.save();
+    ctx.globalAlpha = 0.03; // Muito sutil
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 1;
     
-    // Adicionar padrão decorativo
+    // Padrões geométricos baseados no tema
+    switch(tema) {
+        case 'esperanca':
+            // Raios de luz sutis
+            for (let i = 0; i < 12; i++) {
+                const angulo = (i * 30) * Math.PI / 180;
+                const centerX = ctx.canvas.width / 2;
+                const centerY = ctx.canvas.height / 2;
+                const raio = Math.min(ctx.canvas.width, ctx.canvas.height) / 2;
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(
+                    centerX + Math.cos(angulo) * raio,
+                    centerY + Math.sin(angulo) * raio
+                );
+                ctx.stroke();
+            }
+            break;
+            
+        case 'amor':
+            // Círculos concêntricos
+            for (let i = 1; i <= 5; i++) {
+                ctx.beginPath();
+                ctx.arc(
+                    ctx.canvas.width / 2,
+                    ctx.canvas.height / 2,
+                    (i * 50),
+                    0,
+                    Math.PI * 2
+                );
+                ctx.stroke();
+            }
+            break;
+            
+        case 'paz':
+            // Ondas suaves
+            for (let y = 50; y < ctx.canvas.height; y += 100) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                for (let x = 0; x < ctx.canvas.width; x += 50) {
+                    ctx.quadraticCurveTo(x + 25, y - 20, x + 50, y);
+                }
+                ctx.stroke();
+            }
+            break;
+    }
+    
+    ctx.restore();
+}
+
+function criarImagemGradienteAvancado(tema) {
+    const canvas = document.getElementById('canvasImagem');
+    const ctx = canvas.getContext('2d');
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Gradientes mais sofisticados
+    const gradientsAvancados = {
+        esperanca: () => {
+            const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            grad.addColorStop(0, '#FFD700');
+            grad.addColorStop(0.3, '#FFA500');
+            grad.addColorStop(0.6, '#FF8C00');
+            grad.addColorStop(1, '#FF6347');
+            return grad;
+        },
+        amor: () => {
+            const grad = ctx.createRadialGradient(
+                canvas.width/2, canvas.height/2, 0,
+                canvas.width/2, canvas.height/2, canvas.width/2
+            );
+            grad.addColorStop(0, '#FFB6C1');
+            grad.addColorStop(0.5, '#FF69B4');
+            grad.addColorStop(1, '#C71585');
+            return grad;
+        },
+        paz: () => {
+            const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, '#E0F6FF');
+            grad.addColorStop(0.5, '#87CEEB');
+            grad.addColorStop(1, '#4682B4');
+            return grad;
+        },
+        fe: () => {
+            const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+            grad.addColorStop(0, '#DDA0DD');
+            grad.addColorStop(0.5, '#9370DB');
+            grad.addColorStop(1, '#4B0082');
+            return grad;
+        }
+    };
+    
+    const criarGradiente = gradientsAvancados[tema] || gradientsAvancados.esperanca;
+    ctx.fillStyle = criarGradiente();
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Adicionar textura artística
+    adicionarTexturaArtistica(ctx, tema);
+    
+    // Adicionar padrões grandes
     adicionarPadraoDecorativo(ctx, tema);
+    
+    // Adicionar texto
     adicionarTextoSobreImagem(ctx);
+}
+
+function adicionarTexturaArtistica(ctx, tema) {
+    ctx.save();
+    ctx.globalAlpha = 0.1;
+    ctx.fillStyle = 'white';
+    
+    // Criar textura pontilhada
+    for (let i = 0; i < 500; i++) {
+        const x = Math.random() * ctx.canvas.width;
+        const y = Math.random() * ctx.canvas.height;
+        const raio = Math.random() * 3 + 1;
+        
+        ctx.beginPath();
+        ctx.arc(x, y, raio, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    ctx.restore();
 }
 
 function adicionarPadraoDecorativo(ctx, tema) {
     ctx.save();
-    ctx.globalAlpha = 0.1;
+    ctx.globalAlpha = 0.15;
     
-    // Padrões baseados no tema
     const padroes = {
-        esperanca: () => desenharEstrelas(ctx),
-        amor: () => desenharCoracoes(ctx),
-        paz: () => desenharPombas(ctx),
-        fe: () => desenharCruzes(ctx),
-        sabedoria: () => desenharScrolls(ctx),
-        forca: () => desenharRaios(ctx),
-        protecao: () => desenharEscudos(ctx)
+        esperanca: () => {
+            ctx.fillStyle = 'gold';
+            for (let i = 0; i < 15; i++) {
+                const x = Math.random() * ctx.canvas.width;
+                const y = Math.random() * ctx.canvas.height;
+                desenharEstrela(ctx, x, y, 20, 5, 0.5);
+            }
+        },
+        amor: () => {
+            ctx.fillStyle = 'pink';
+            for (let i = 0; i < 12; i++) {
+                const x = Math.random() * ctx.canvas.width;
+                const y = Math.random() * ctx.canvas.height;
+                desenharCoracao(ctx, x, y, 25);
+            }
+        },
+        paz: () => {
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 8; i++) {
+                const x = Math.random() * ctx.canvas.width;
+                const y = Math.random() * ctx.canvas.height;
+                desenharPomba(ctx, x, y, 15);
+            }
+        },
+        fe: () => {
+            ctx.strokeStyle = 'gold';
+            ctx.lineWidth = 3;
+            for (let i = 0; i < 6; i++) {
+                const x = Math.random() * ctx.canvas.width;
+                const y = Math.random() * ctx.canvas.height;
+                desenharCruz(ctx, x, y, 25);
+            }
+        }
     };
     
     const padrao = padroes[tema] || padroes.esperanca;
@@ -259,15 +377,7 @@ function adicionarPadraoDecorativo(ctx, tema) {
     ctx.restore();
 }
 
-function desenharEstrelas(ctx) {
-    ctx.fillStyle = 'gold';
-    for (let i = 0; i < 20; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        desenharEstrela(ctx, x, y, 15, 5, 0.5);
-    }
-}
-
+// Funções de desenho dos padrões
 function desenharEstrela(ctx, cx, cy, raioExt, pontas, raioInt) {
     ctx.save();
     ctx.translate(cx, cy);
@@ -285,15 +395,6 @@ function desenharEstrela(ctx, cx, cy, raioExt, pontas, raioInt) {
     ctx.restore();
 }
 
-function desenharCoracoes(ctx) {
-    ctx.fillStyle = 'pink';
-    for (let i = 0; i < 15; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        desenharCoracao(ctx, x, y, 20);
-    }
-}
-
 function desenharCoracao(ctx, x, y, size) {
     ctx.save();
     ctx.translate(x, y);
@@ -308,91 +409,23 @@ function desenharCoracao(ctx, x, y, size) {
     ctx.restore();
 }
 
-function desenharPombas(ctx) {
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = 2;
-    for (let i = 0; i < 10; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        ctx.beginPath();
-        ctx.arc(x, y, 10, 0, Math.PI);
-        ctx.moveTo(x - 15, y);
-        ctx.lineTo(x - 5, y - 5);
-        ctx.moveTo(x + 15, y);
-        ctx.lineTo(x + 5, y - 5);
-        ctx.stroke();
-    }
+function desenharPomba(ctx, x, y, size) {
+    ctx.beginPath();
+    ctx.arc(x, y, size/2, 0, Math.PI);
+    ctx.moveTo(x - size, y);
+    ctx.lineTo(x - size/3, y - size/2);
+    ctx.moveTo(x + size, y);
+    ctx.lineTo(x + size/3, y - size/2);
+    ctx.stroke();
 }
 
-function desenharCruzes(ctx) {
-    ctx.strokeStyle = 'gold';
-    ctx.lineWidth = 3;
-    for (let i = 0; i < 8; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        const size = 20;
-        
-        ctx.beginPath();
-        ctx.moveTo(x, y - size);
-        ctx.lineTo(x, y + size);
-        ctx.moveTo(x - size/2, y - size/2);
-        ctx.lineTo(x + size/2, y - size/2);
-        ctx.stroke();
-    }
-}
-
-function desenharScrolls(ctx) {
-    ctx.strokeStyle = 'burlywood';
-    ctx.lineWidth = 2;
-    for (let i = 0; i < 6; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        
-        ctx.beginPath();
-        ctx.rect(x - 15, y - 10, 30, 20);
-        ctx.moveTo(x - 15, y - 10);
-        ctx.bezierCurveTo(x - 20, y - 15, x - 20, y + 15, x - 15, y + 10);
-        ctx.moveTo(x + 15, y - 10);
-        ctx.bezierCurveTo(x + 20, y - 15, x + 20, y + 15, x + 15, y + 10);
-        ctx.stroke();
-    }
-}
-
-function desenharRaios(ctx) {
-    ctx.strokeStyle = 'yellow';
-    ctx.lineWidth = 3;
-    for (let i = 0; i < 12; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        
-        ctx.beginPath();
-        ctx.moveTo(x, y - 25);
-        ctx.lineTo(x - 8, y - 5);
-        ctx.lineTo(x + 3, y - 5);
-        ctx.lineTo(x - 5, y + 10);
-        ctx.lineTo(x + 8, y - 5);
-        ctx.lineTo(x - 3, y - 5);
-        ctx.lineTo(x, y - 25);
-        ctx.stroke();
-    }
-}
-
-function desenharEscudos(ctx) {
-    ctx.fillStyle = 'silver';
-    for (let i = 0; i < 8; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        
-        ctx.beginPath();
-        ctx.moveTo(x, y - 15);
-        ctx.lineTo(x - 10, y - 10);
-        ctx.lineTo(x - 10, y + 5);
-        ctx.lineTo(x, y + 15);
-        ctx.lineTo(x + 10, y + 5);
-        ctx.lineTo(x + 10, y - 10);
-        ctx.closePath();
-        ctx.fill();
-    }
+function desenharCruz(ctx, x, y, size) {
+    ctx.beginPath();
+    ctx.moveTo(x, y - size);
+    ctx.lineTo(x, y + size);
+    ctx.moveTo(x - size/2, y - size/2);
+    ctx.lineTo(x + size/2, y - size/2);
+    ctx.stroke();
 }
 
 function adicionarOverlayTexto(ctx) {
@@ -422,17 +455,17 @@ function adicionarOverlayTexto(ctx) {
     
     if (posicao === 'superior') {
         gradient.addColorStop(0, `rgba(0,0,0,${opacidade})`);
-        gradient.addColorStop(0.7, `rgba(0,0,0,${opacidade * 0.5})`);
+        gradient.addColorStop(0.7, `rgba(0,0,0,${opacidade * 0.3})`);
         gradient.addColorStop(1, 'rgba(0,0,0,0)');
     } else if (posicao === 'inferior') {
         gradient.addColorStop(0, 'rgba(0,0,0,0)');
-        gradient.addColorStop(0.3, `rgba(0,0,0,${opacidade * 0.5})`);
+        gradient.addColorStop(0.3, `rgba(0,0,0,${opacidade * 0.3})`);
         gradient.addColorStop(1, `rgba(0,0,0,${opacidade})`);
     } else {
         gradient.addColorStop(0, 'rgba(0,0,0,0)');
-        gradient.addColorStop(0.2, `rgba(0,0,0,${opacidade * 0.3})`);
+        gradient.addColorStop(0.2, `rgba(0,0,0,${opacidade * 0.2})`);
         gradient.addColorStop(0.5, `rgba(0,0,0,${opacidade})`);
-        gradient.addColorStop(0.8, `rgba(0,0,0,${opacidade * 0.3})`);
+        gradient.addColorStop(0.8, `rgba(0,0,0,${opacidade * 0.2})`);
         gradient.addColorStop(1, 'rgba(0,0,0,0)');
     }
     
@@ -444,17 +477,18 @@ function adicionarTextoSobreImagem(ctx) {
     const canvas = ctx.canvas;
     const posicao = document.getElementById('posicaoTexto').value;
     
+    // Configuração de texto aprimorada
     ctx.fillStyle = 'white';
     ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0,0,0,0.9)';
+    ctx.shadowColor = 'rgba(0,0,0,0.8)';
     ctx.shadowBlur = 8;
-    ctx.shadowOffsetX = 2;
-    ctx.shadowOffsetY = 2;
+    ctx.shadowOffsetX = 3;
+    ctx.shadowOffsetY = 3;
     
     let yBase;
     switch(posicao) {
         case 'superior':
-            yBase = canvas.height * 0.2;
+            yBase = canvas.height * 0.22;
             break;
         case 'centro':
             yBase = canvas.height * 0.5;
@@ -465,24 +499,28 @@ function adicionarTextoSobreImagem(ctx) {
             break;
     }
     
-    ctx.font = 'bold 32px Inter, Georgia, serif';
+    // Texto principal
+    ctx.font = 'bold 34px Inter, "Times New Roman", serif';
     const texto = versiculoAtual.texto;
     
-    const linhas = quebrarTextoInteligente(ctx, texto, canvas.width - 100);
+    const linhas = quebrarTextoInteligente(ctx, texto, canvas.width - 120);
     
-    const alturaLinha = 40;
+    const alturaLinha = 42;
     const alturaTotal = linhas.length * alturaLinha;
     const yInicial = yBase - (alturaTotal / 2);
     
+    // Desenhar cada linha
     linhas.forEach((linha, index) => {
         ctx.fillText(linha, canvas.width / 2, yInicial + (index * alturaLinha));
     });
     
-    ctx.font = 'italic 26px Inter, Georgia, serif';
+    // Referência
+    ctx.font = 'italic bold 28px Inter, "Times New Roman", serif';
     ctx.shadowBlur = 6;
-    const yReferencia = yInicial + alturaTotal + 40;
+    const yReferencia = yInicial + alturaTotal + 45;
     ctx.fillText(`— ${versiculoAtual.referencia}`, canvas.width / 2, yReferencia);
     
+    // Limpar sombras
     ctx.shadowColor = 'transparent';
     ctx.shadowBlur = 0;
     ctx.shadowOffsetX = 0;
@@ -499,7 +537,7 @@ function quebrarTextoInteligente(ctx, texto, larguraMax) {
         const largura = ctx.measureText(testeLinha).width;
         
         if (largura > larguraMax && linhaAtual) {
-            linhas.push(linhaAtual);
+            linhas.push(linhaAtual.trim());
             linhaAtual = palavra;
         } else {
             linhaAtual = testeLinha;
@@ -507,7 +545,7 @@ function quebrarTextoInteligente(ctx, texto, larguraMax) {
     }
     
     if (linhaAtual) {
-        linhas.push(linhaAtual);
+        linhas.push(linhaAtual.trim());
     }
     
     return linhas;
@@ -536,6 +574,7 @@ function mostrarProgresso(mensagem, porcentagem) {
     status.querySelector('.progress-fill').style.width = porcentagem + '%';
 }
 
+// ========== FUNCIONALIDADES DE COMPARTILHAMENTO ==========
 function baixarImagem() {
     if (!versiculoAtual) {
         mostrarToast('❌ Nenhuma imagem para baixar');
@@ -553,14 +592,11 @@ function baixarImagem() {
     link.href = canvas.toDataURL('image/png', 1.0);
     link.click();
     
-    mostrarToast('💾 Imagem baixada com sucesso!');
+    mostrarToast('💾 Imagem baixada!');
 }
 
 function compartilharWhatsApp() {
-    if (!versiculoAtual) {
-        mostrarToast('❌ Nenhum versículo para compartilhar');
-        return;
-    }
+    if (!versiculoAtual) return;
     
     const texto = `🙏 *${versiculoAtual.referencia}*\n\n"_${versiculoAtual.texto}_"\n\n✨ Criado em: ${window.location.href}`;
     const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
@@ -570,83 +606,47 @@ function compartilharWhatsApp() {
 }
 
 function copiarTexto() {
-    if (!versiculoAtual) {
-        mostrarToast('❌ Nenhum texto para copiar');
-        return;
-    }
+    if (!versiculoAtual) return;
     
     const texto = `"${versiculoAtual.texto}"\n\n— ${versiculoAtual.referencia}`;
     
     if (navigator.clipboard) {
         navigator.clipboard.writeText(texto).then(() => {
             mostrarToast('📋 Texto copiado!');
-        }).catch(() => {
-            copiarTextoFallback(texto);
         });
-    } else {
-        copiarTextoFallback(texto);
     }
-}
-
-function copiarTextoFallback(texto) {
-    const textarea = document.createElement('textarea');
-    textarea.value = texto;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-    mostrarToast('📋 Texto copiado!');
 }
 
 function compartilharFacebook() {
-    if (!versiculoAtual) {
-        mostrarToast('❌ Nenhum conteúdo para compartilhar');
-        return;
-    }
+    if (!versiculoAtual) return;
     
     const texto = encodeURIComponent(`"${versiculoAtual.texto}" - ${versiculoAtual.referencia}`);
     const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${texto}`;
     
-    window.open(url, '_blank', 'width=600,height=400');
+    window.open(url, '_blank');
     mostrarToast('📘 Abrindo Facebook...');
 }
 
-function mostrarToast(mensagem, tipo = 'success') {
+function mostrarToast(mensagem) {
     const toast = document.getElementById('toast');
-    toast.className = `toast ${tipo}`;
     toast.textContent = mensagem;
     toast.classList.add('show');
     
     setTimeout(() => {
         toast.classList.remove('show');
-    }, 4000);
+    }, 3000);
 }
 
 function incrementarContador() {
-    const hoje = new Date().toDateString();
-    const contadorHoje = localStorage.getItem('contador_hoje');
-    const dataContador = localStorage.getItem('data_contador');
-    
-    if (dataContador !== hoje) {
-        localStorage.setItem('contador_hoje', '1');
-        localStorage.setItem('data_contador', hoje);
-    } else {
-        const novoContador = parseInt(contadorHoje || '0') + 1;
-        localStorage.setItem('contador_hoje', novoContador);
-    }
-    
-    const contadorTotal = parseInt(localStorage.getItem('contador_total') || '0') + 1;
-    localStorage.setItem('contador_total', contadorTotal);
-    
+    const contador = parseInt(localStorage.getItem('contador_total') || '0') + 1;
+    localStorage.setItem('contador_total', contador);
     atualizarContadores();
 }
 
 function atualizarContadores() {
-    const contadorHoje = localStorage.getItem('contador_hoje') || '0';
-    const contadorTotal = localStorage.getItem('contador_total') || '0';
-    
+    const contador = localStorage.getItem('contador_total') || '0';
     const elemento = document.getElementById('contadorVersiculos');
     if (elemento) {
-        elemento.textContent = `${contadorHoje} hoje • ${contadorTotal} total`;
+        elemento.textContent = `${contador} imagens criadas`;
     }
 }
