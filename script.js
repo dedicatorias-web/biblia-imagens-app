@@ -46,6 +46,203 @@ let versiculos = {};
 let versiculoAtual = null;
 let imagemAtualBlob = null;
 
+// ========== 30 MODELOS HUGGING FACE CATEGORIZADOS ==========
+const modelosHuggingFace = {
+    
+    // ========== SEÇÃO RÁPIDA (10 modelos) - Prioridade máxima ==========
+    rapida: [
+        {
+            nome: "Stable Diffusion v1.5",
+            url: "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5",
+            categoria: "rapida",
+            confiabilidade: 9
+        },
+        {
+            nome: "CompVis SD v1.4", 
+            url: "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4",
+            categoria: "rapida",
+            confiabilidade: 8
+        },
+        {
+            nome: "SD Turbo",
+            url: "https://api-inference.huggingface.co/models/stabilityai/sd-turbo",
+            categoria: "rapida", 
+            confiabilidade: 7
+        },
+        {
+            nome: "Openjourney v4",
+            url: "https://api-inference.huggingface.co/models/prompthero/openjourney-v4",
+            categoria: "rapida",
+            confiabilidade: 8
+        },
+        {
+            nome: "Deliberate v2",
+            url: "https://api-inference.huggingface.co/models/XpucT/Deliberate",
+            categoria: "rapida",
+            confiabilidade: 7
+        },
+        {
+            nome: "Anything v3",
+            url: "https://api-inference.huggingface.co/models/Linaqruf/anything-v3.0",
+            categoria: "rapida",
+            confiabilidade: 6
+        },
+        {
+            nome: "DreamShaper",
+            url: "https://api-inference.huggingface.co/models/Lykon/DreamShaper",
+            categoria: "rapida", 
+            confiabilidade: 7
+        },
+        {
+            nome: "Protogen x3.4",
+            url: "https://api-inference.huggingface.co/models/darkstorm2150/Protogen_x3.4_Official_Release",
+            categoria: "rapida",
+            confiabilidade: 6
+        },
+        {
+            nome: "AbyssOrangeMix3",
+            url: "https://api-inference.huggingface.co/models/WarriorMama777/OrangeMixs",
+            categoria: "rapida",
+            confiabilidade: 6
+        },
+        {
+            nome: "Counterfeit v3",
+            url: "https://api-inference.huggingface.co/models/gsdf/Counterfeit-V3.0",
+            categoria: "rapida",
+            confiabilidade: 5
+        }
+    ],
+
+    // ========== SEÇÃO MÉDIA (10 modelos) - Qualidade equilibrada ==========
+    media: [
+        {
+            nome: "Stable Diffusion v2.1",
+            url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1",
+            categoria: "media",
+            confiabilidade: 9
+        },
+        {
+            nome: "Dreamlike Photoreal 2.0",
+            url: "https://api-inference.huggingface.co/models/dreamlike-art/dreamlike-photoreal-2.0",
+            categoria: "media",
+            confiabilidade: 8
+        },
+        {
+            nome: "Realistic Vision v5",
+            url: "https://api-inference.huggingface.co/models/SG161222/Realistic_Vision_V5.1_noVAE",
+            categoria: "media",
+            confiabilidade: 8
+        },
+        {
+            nome: "ChilloutMix",
+            url: "https://api-inference.huggingface.co/models/TASUKU2023/Chilloutmix",
+            categoria: "media",
+            confiabilidade: 7
+        },
+        {
+            nome: "Analog Diffusion",
+            url: "https://api-inference.huggingface.co/models/wavymulder/Analog-Diffusion",
+            categoria: "media",
+            confiabilidade: 7
+        },
+        {
+            nome: "Epic Realism",
+            url: "https://api-inference.huggingface.co/models/emilianJR/epiCRealism",
+            categoria: "media",
+            confiabilidade: 6
+        },
+        {
+            nome: "Realistic Vision v4",
+            url: "https://api-inference.huggingface.co/models/SG161222/Realistic_Vision_V4.0",
+            categoria: "media",
+            confiabilidade: 7
+        },
+        {
+            nome: "DreamShaper v7",
+            url: "https://api-inference.huggingface.co/models/Lykon/dreamshaper-7",
+            categoria: "media",
+            confiabilidade: 6
+        },
+        {
+            nome: "MajicMix Realistic",
+            url: "https://api-inference.huggingface.co/models/digiplay/majicMIX.realistic_v6",
+            categoria: "media",
+            confiabilidade: 6
+        },
+        {
+            nome: "Rev Animated",
+            url: "https://api-inference.huggingface.co/models/stablediffusionapi/rev-animated",
+            categoria: "media",
+            confiabilidade: 5
+        }
+    ],
+
+    // ========== SEÇÃO ALTA (10 modelos) - Máxima qualidade ==========
+    alta: [
+        {
+            nome: "SDXL Base 1.0",
+            url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
+            categoria: "alta",
+            confiabilidade: 9
+        },
+        {
+            nome: "SDXL Turbo",
+            url: "https://api-inference.huggingface.co/models/stabilityai/sdxl-turbo",
+            categoria: "alta",
+            confiabilidade: 8
+        },
+        {
+            nome: "Juggernaut XL",
+            url: "https://api-inference.huggingface.co/models/RunDiffusion/Juggernaut-XL-v9",
+            categoria: "alta",
+            confiabilidade: 8
+        },
+        {
+            nome: "RealVisXL v4",
+            url: "https://api-inference.huggingface.co/models/SG161222/RealVisXL_V4.0",
+            categoria: "alta",
+            confiabilidade: 7
+        },
+        {
+            nome: "DreamShaper XL",
+            url: "https://api-inference.huggingface.co/models/Lykon/dreamshaper-xl-1-0",
+            categoria: "alta",
+            confiabilidade: 7
+        },
+        {
+            nome: "Playground v2.5",
+            url: "https://api-inference.huggingface.co/models/playgroundai/playground-v2.5-1024px-aesthetic",
+            categoria: "alta",
+            confiabilidade: 6
+        },
+        {
+            nome: "Crystal Clear XL",
+            url: "https://api-inference.huggingface.co/models/SG161222/crystalClearXL_ccxl",
+            categoria: "alta",
+            confiabilidade: 6
+        },
+        {
+            nome: "Copax TimeLessXL",
+            url: "https://api-inference.huggingface.co/models/Copax/COPAX_TimeLessXL_SDXL1_Temporal_Consistency",
+            categoria: "alta",
+            confiabilidade: 5
+        },
+        {
+            nome: "AlbedoBase XL",
+            url: "https://api-inference.huggingface.co/models/PublicPrompts/AlbedoBase-XL",
+            categoria: "alta",
+            confiabilidade: 5
+        },
+        {
+            nome: "Kandinsky 2.2",
+            url: "https://api-inference.huggingface.co/models/kandinsky-community/kandinsky-2-2-decoder",
+            categoria: "alta",
+            confiabilidade: 4
+        }
+    ]
+};
+
+
 // Prompts específicos para cada tema com foco no texto do versículo
 const criarPromptPersonalizado = (tema, textoVersiculo) => {
     const palavrasChave = extrairPalavrasChave(textoVersiculo);
@@ -290,201 +487,6 @@ async function gerarVersiculoComIA() {
 }
 
 // ========== TENTATIVAS DE GERAÇÃO COM IA ==========
-// ========== 30 MODELOS HUGGING FACE CATEGORIZADOS ==========
-const modelosHuggingFace = {
-    
-    // ========== SEÇÃO RÁPIDA (10 modelos) - Prioridade máxima ==========
-    rapida: [
-        {
-            nome: "Stable Diffusion v1.5",
-            url: "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5",
-            categoria: "rapida",
-            confiabilidade: 9
-        },
-        {
-            nome: "CompVis SD v1.4", 
-            url: "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4",
-            categoria: "rapida",
-            confiabilidade: 8
-        },
-        {
-            nome: "SD Turbo",
-            url: "https://api-inference.huggingface.co/models/stabilityai/sd-turbo",
-            categoria: "rapida", 
-            confiabilidade: 7
-        },
-        {
-            nome: "Openjourney v4",
-            url: "https://api-inference.huggingface.co/models/prompthero/openjourney-v4",
-            categoria: "rapida",
-            confiabilidade: 8
-        },
-        {
-            nome: "Deliberate v2",
-            url: "https://api-inference.huggingface.co/models/XpucT/Deliberate",
-            categoria: "rapida",
-            confiabilidade: 7
-        },
-        {
-            nome: "Anything v3",
-            url: "https://api-inference.huggingface.co/models/Linaqruf/anything-v3.0",
-            categoria: "rapida",
-            confiabilidade: 6
-        },
-        {
-            nome: "DreamShaper",
-            url: "https://api-inference.huggingface.co/models/Lykon/DreamShaper",
-            categoria: "rapida", 
-            confiabilidade: 7
-        },
-        {
-            nome: "Protogen x3.4",
-            url: "https://api-inference.huggingface.co/models/darkstorm2150/Protogen_x3.4_Official_Release",
-            categoria: "rapida",
-            confiabilidade: 6
-        },
-        {
-            nome: "AbyssOrangeMix3",
-            url: "https://api-inference.huggingface.co/models/WarriorMama777/OrangeMixs",
-            categoria: "rapida",
-            confiabilidade: 6
-        },
-        {
-            nome: "Counterfeit v3",
-            url: "https://api-inference.huggingface.co/models/gsdf/Counterfeit-V3.0",
-            categoria: "rapida",
-            confiabilidade: 5
-        }
-    ],
-
-    // ========== SEÇÃO MÉDIA (10 modelos) - Qualidade equilibrada ==========
-    media: [
-        {
-            nome: "Stable Diffusion v2.1",
-            url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1",
-            categoria: "media",
-            confiabilidade: 9
-        },
-        {
-            nome: "Dreamlike Photoreal 2.0",
-            url: "https://api-inference.huggingface.co/models/dreamlike-art/dreamlike-photoreal-2.0",
-            categoria: "media",
-            confiabilidade: 8
-        },
-        {
-            nome: "Realistic Vision v5",
-            url: "https://api-inference.huggingface.co/models/SG161222/Realistic_Vision_V5.1_noVAE",
-            categoria: "media",
-            confiabilidade: 8
-        },
-        {
-            nome: "ChilloutMix",
-            url: "https://api-inference.huggingface.co/models/TASUKU2023/Chilloutmix",
-            categoria: "media",
-            confiabilidade: 7
-        },
-        {
-            nome: "Analog Diffusion",
-            url: "https://api-inference.huggingface.co/models/wavymulder/Analog-Diffusion",
-            categoria: "media",
-            confiabilidade: 7
-        },
-        {
-            nome: "Epic Realism",
-            url: "https://api-inference.huggingface.co/models/emilianJR/epiCRealism",
-            categoria: "media",
-            confiabilidade: 6
-        },
-        {
-            nome: "Realistic Vision v4",
-            url: "https://api-inference.huggingface.co/models/SG161222/Realistic_Vision_V4.0",
-            categoria: "media",
-            confiabilidade: 7
-        },
-        {
-            nome: "DreamShaper v7",
-            url: "https://api-inference.huggingface.co/models/Lykon/dreamshaper-7",
-            categoria: "media",
-            confiabilidade: 6
-        },
-        {
-            nome: "MajicMix Realistic",
-            url: "https://api-inference.huggingface.co/models/digiplay/majicMIX.realistic_v6",
-            categoria: "media",
-            confiabilidade: 6
-        },
-        {
-            nome: "Rev Animated",
-            url: "https://api-inference.huggingface.co/models/stablediffusionapi/rev-animated",
-            categoria: "media",
-            confiabilidade: 5
-        }
-    ],
-
-    // ========== SEÇÃO ALTA (10 modelos) - Máxima qualidade ==========
-    alta: [
-        {
-            nome: "SDXL Base 1.0",
-            url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
-            categoria: "alta",
-            confiabilidade: 9
-        },
-        {
-            nome: "SDXL Turbo",
-            url: "https://api-inference.huggingface.co/models/stabilityai/sdxl-turbo",
-            categoria: "alta",
-            confiabilidade: 8
-        },
-        {
-            nome: "Juggernaut XL",
-            url: "https://api-inference.huggingface.co/models/RunDiffusion/Juggernaut-XL-v9",
-            categoria: "alta",
-            confiabilidade: 8
-        },
-        {
-            nome: "RealVisXL v4",
-            url: "https://api-inference.huggingface.co/models/SG161222/RealVisXL_V4.0",
-            categoria: "alta",
-            confiabilidade: 7
-        },
-        {
-            nome: "DreamShaper XL",
-            url: "https://api-inference.huggingface.co/models/Lykon/dreamshaper-xl-1-0",
-            categoria: "alta",
-            confiabilidade: 7
-        },
-        {
-            nome: "Playground v2.5",
-            url: "https://api-inference.huggingface.co/models/playgroundai/playground-v2.5-1024px-aesthetic",
-            categoria: "alta",
-            confiabilidade: 6
-        },
-        {
-            nome: "Crystal Clear XL",
-            url: "https://api-inference.huggingface.co/models/SG161222/crystalClearXL_ccxl",
-            categoria: "alta",
-            confiabilidade: 6
-        },
-        {
-            nome: "Copax TimeLessXL",
-            url: "https://api-inference.huggingface.co/models/Copax/COPAX_TimeLessXL_SDXL1_Temporal_Consistency",
-            categoria: "alta",
-            confiabilidade: 5
-        },
-        {
-            nome: "AlbedoBase XL",
-            url: "https://api-inference.huggingface.co/models/PublicPrompts/AlbedoBase-XL",
-            categoria: "alta",
-            confiabilidade: 5
-        },
-        {
-            nome: "Kandinsky 2.2",
-            url: "https://api-inference.huggingface.co/models/kandinsky-community/kandinsky-2-2-decoder",
-            categoria: "alta",
-            confiabilidade: 4
-        }
-    ]
-};
 
 // ========== FUNÇÃO PRINCIPAL COM ESTRATÉGIA INTELIGENTE ==========
 async function tentarGerarImagemIA(prompt, tema) {
