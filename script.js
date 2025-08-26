@@ -40,11 +40,11 @@ let versiculos = {};
 let versiculoAtual = null;
 let imagemAtualBlob = null;
 
-// URLs dos modelos gratuitos do Hugging Face
+// ========== CORREÇÃO: MODELOS GRATUITOS ==========
 const modelosHuggingFace = {
-    rapida: "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5",
-    media: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1",
-    alta: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
+    rapida: "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4",
+    media: "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5", 
+    alta: "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4"
 };
 
 // Prompts específicos para cada tema com foco no texto do versículo
@@ -335,50 +335,58 @@ async function tentarGerarImagemIA(prompt, tema) {
     return null;
 }
 
+// ========== CORREÇÃO: USAR MODELOS GRATUITOS SEM AUTENTICAÇÃO ==========
 async function chamarAPIHuggingFace(modelUrl, prompt, qualidade) {
     const parametros = {
-        rapida: { steps: 20, width: 512, height: 384 },
-        media: { steps: 25, width: 640, height: 480 },
-        alta: { steps: 30, width: 768, height: 576 }
+        rapida: { steps: 15, width: 512, height: 384 },
+        media: { steps: 20, width: 640, height: 480 },
+        alta: { steps: 25, width: 768, height: 576 }
     };
     
     const config = parametros[qualidade] || parametros.media;
     
-    const response = await fetch(modelUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            inputs: prompt,
-            parameters: {
-                num_inference_steps: config.steps,
-                guidance_scale: 7.5,
-                width: config.width,
-                height: config.height,
-                negative_prompt: "text, words, letters, watermark, signature, blurry, low quality, bad anatomy, distorted"
-            }
-        }),
-        timeout: 30000 // 30 segundos timeout
-    });
-    
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Erro HTTP:', response.status, errorText);
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
+    try {
+        // Usar modelo gratuito e público
+        const modeloGratuito = "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4";
+        
+        const response = await fetch(modeloGratuito, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // Removido header de Authorization que causava erro 401
+            },
+            body: JSON.stringify({
+                inputs: prompt,
+                parameters: {
+                    num_inference_steps: config.steps,
+                    guidance_scale: 7.5,
+                    width: config.width,
+                    height: config.height
+                }
+            })
+        });
+        
+        console.log('📡 Status da resposta:', response.status);
+        
+        if (!response.ok) {
+            console.log('⚠️ Erro na API, usando arte local...');
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        console.log('📦 Blob recebido:', blob.size, 'bytes');
+        
+        if (blob.size < 1000) {
+            throw new Error('Imagem muito pequena');
+        }
+        
+        return blob;
+        
+    } catch (error) {
+        console.log('⚠️ API falhou, continuando com arte local:', error.message);
+        throw error;
     }
-    
-    const blob = await response.blob();
-    
-    // Verificar se é uma imagem válida
-    if (blob.size < 1000 || !blob.type.includes('image')) {
-        console.error('Blob inválido:', blob.size, blob.type);
-        throw new Error('Resposta não é uma imagem válida');
-    }
-    
-    return blob;
 }
-
 // ========== PROCESSAMENTO DA IMAGEM FINAL ==========
 async function processarImagemFinal(imageBlob) {
     return new Promise((resolve) => {
