@@ -18,47 +18,28 @@
         </header>
 
         <main>
-            <div class="controls">
-                <div class="control-group">
-                    <label for="temaEscolhido">Tema:</label>
-                    <select id="temaEscolhido">
-                        <option value="esperanca">✨ Esperança</option>
-                        <option value="amor">❤️ Amor</option>
-                        <option value="paz">🕊️ Paz</option>
-                        <option value="fe">🙏 Fé</option>
-                        <option value="sabedoria">🦉 Sabedoria</option>
-                        <option value="forca">💪 Força</option>
-                        <option value="protecao">🛡️ Proteção</option>
-                    </select>
-                </div>
-                
-                <div class="control-group">
-                    <label for="qualidadeImagem">Qualidade da IA:</label>
-                    <select id="qualidadeImagem">
-                        <option value="rapida">⚡ Rápida</option>
-                        <option value="media" selected>🎨 Média</option>
-                        <option value="alta">💎 Alta Qualidade</option>
-                    </select>
-                </div>
+      
+<!-- ============================================================================ -->
+<!-- MOSTRA MENU SUPERIOR -->
+<!-- ============================================================================ -->
 
-                <div class="control-group">
-                    <label for="posicaoTexto">Posição do Texto:</label>
-                    <select id="posicaoTexto">
-                        <option value="centro">Centro</option>
-                        <option value="inferior" selected>Parte Inferior</option>
-                        <option value="superior">Parte Superior</option>
-                    </select>
-                </div>
+            
+<!-- Menu superior: apenas Tema + Botão Gerar -->
+<div class="menu-superior">
+  <div class="grupo-tema">
+    <label for="temaEscolhido">Tema</label>
+    <select id="temaEscolhido"></select>
+  </div>
 
-                <div class="control-group">
-                    <label for="opacidadeFundo">Opacidade do Fundo:</label>
-                    <input type="range" id="opacidadeFundo" min="0.3" max="0.9" step="0.1" value="0.7">
-                    <span id="opacidadeDisplay">70%</span>
-                </div>
+  <button id="gerarVersiculo" type="button" class="btn-primario" aria-label="Gerar novo versículo e imagem">
+    Gerar Novo Versículo
+  </button>
+</div>
 
-                <button id="gerarVersiculo">🎨 Gerar Imagem com IA</button>
-            </div>
-
+            
+<!-- ============================================================================ -->
+<!-- MOSTRA A IMAGEM -->
+<!-- ============================================================================ -->
             <div class="image-container">
                 <canvas id="canvasImagem" width="800" height="600"></canvas>
             </div>
