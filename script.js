@@ -1493,6 +1493,7 @@ function adicionarTextoEleganteNoCanvas(ctx, canvas) {
   ctx.shadowBlur = 0;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
+  console.log('📖 Versículo: Altura ajustada automaticamente', );
 }
 
 // Wrapper para compatibilidade
