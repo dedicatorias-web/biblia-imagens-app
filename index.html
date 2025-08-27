@@ -63,23 +63,64 @@
                 <canvas id="canvasImagem" width="800" height="600"></canvas>
             </div>
 
-            <!-- ============================================================================ -->
-            <!-- BOTÃO UNIVERSAL DE COMPARTILHAMENTO -->
-            <!-- ============================================================================ -->
+          
+<!-- ============================================================================ -->
+<!-- BOTÕES DE COMPARTILHAMENTO COM ÍCONES -->
+<!-- ============================================================================ -->
 
-            <div class="compartilhar-section" style="margin-top: 2em;">
-                <h3 class="compartilhar-titulo">📤 Compartilhar Versículo</h3>
-                <div style="text-align: center;">
-                    <button id="compartilhar" style="font-size:1.15em;display:inline-flex;align-items:center;gap:.5em;padding:.7em 1.3em;">
-                        <img src="icone-compartilhar.svg" alt="Compartilhar" style="width:1.5em;vertical-align:middle;">
-                        Compartilhar
-                    </button>
-                    <small style="display:block;margin-top:8px;color:#888;">
-                        Dica: Use o botão acima para compartilhar imagem, texto e link em qualquer app (Android/iOS).<br>
-                        Se não for possível, será enviado texto/link pelo WhatsApp.
-                    </small>
-                </div>
-            </div>
+<div class="compartilhar-section">
+    <h3 class="compartilhar-titulo">📤 Compartilhar Versículo</h3>
+    
+    <div class="compartilhar-grid">
+        <!-- WhatsApp -->
+        <button onclick="compartilharWhatsApp()" class="btn-social whatsapp" title="Compartilhar no WhatsApp">
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1[...]"/>
+            </svg>
+            <span class="btn-text">WhatsApp</span>
+        </button>
+
+        <!-- Facebook -->
+        <button onclick="compartilharFacebook()" class="btn-social facebook" title="Compartilhar no Facebook">
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.2[..."/>
+            </svg>
+            <span class="btn-text">Facebook</span>
+        </button>
+
+        <!-- Twitter -->
+        <button onclick="compartilharTwitter()" class="btn-social twitter" title="Compartilhar no Twitter/X">
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+            <span class="btn-text">Twitter</span>
+        </button>
+
+        <!-- Telegram -->
+        <button onclick="compartilharTelegram()" class="btn-social telegram" title="Compartilhar no Telegram">
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.03[..."/>
+            </svg>
+            <span class="btn-text">Telegram</span>
+        </button>
+
+        <!-- Email -->
+        <button onclick="compartilharEmail()" class="btn-social email" title="Compartilhar por Email">
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819V11.73L12 16.64l-6.545-4.91v9.273H1.636A1.636 1.636 0 0 1 0 19.366V5.457c0-.904.732-1.636 1.636-1.636h3.819v.273L12 1[..."/>
+            </svg>
+            <span class="btn-text">Email</span>
+        </button>
+
+        <!-- Compartilhar Nativo -->
+        <button onclick="compartilharVersiculo()" class="btn-social nativo" title="Mais opções de compartilhamento">
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8[..."/>
+            </svg>
+            <span class="btn-text">Mais</span>
+        </button>
+    </div>
+</div>
 
             <div class="versiculo-info">
                 <p id="versiculoTexto"></p>
@@ -97,7 +138,7 @@
 
     <div class="toast" id="toast"></div>
     <!-- No index.html, ANTES do script.js -->
-    <script src="config.js"></script>
-    <script src="script.js"></script>
+<script src="config.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
