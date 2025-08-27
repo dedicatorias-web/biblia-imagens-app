@@ -138,29 +138,55 @@ const elementosHistoricos = {
 // INÍCIO PARTE 3: MODELOS DE IA E PARÂMETROS
 // ============================================================================
 
-// Modelos Hugging Face prioritários
+// Modelos Hugging Face ATUALIZADOS E FUNCIONAIS (Dezembro 2024)
 const modelosHFPrioritarios = [
     {
-        nome: "Stable Diffusion 2.1",
-        url: "stabilityai/stable-diffusion-2-1",
+        nome: "Stable Diffusion XL Base",
+        url: "stabilityai/stable-diffusion-xl-base-1.0",
         categoria: "alta",
         confiabilidade: 9,
-        tempo_estimado: "20-40s",
+        tempo_estimado: "30-50s",
         parametros_customizados: {
-            num_inference_steps: 30,
+            num_inference_steps: 25,
             guidance_scale: 7.5,
+            width: 1024,
+            height: 1024
+        }
+    },
+    {
+        nome: "RunwayML SD 1.5",
+        url: "runwayml/stable-diffusion-v1-5",
+        categoria: "rapida",
+        confiabilidade: 8,
+        tempo_estimado: "15-30s",
+        parametros_customizados: {
+            num_inference_steps: 20,
+            guidance_scale: 7.5,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "Dreamlike Photoreal",
+        url: "dreamlike-art/dreamlike-photoreal-2.0",
+        categoria: "realista",
+        confiabilidade: 7,
+        tempo_estimado: "20-35s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 8,
             width: 768,
             height: 768
         }
     },
     {
-        nome: "OpenJourney V4",
-        url: "prompthero/openjourney-v4",
-        categoria: "rapida",
+        nome: "CompVis SD 1.4",
+        url: "CompVis/stable-diffusion-v1-4",
+        categoria: "classica",
         confiabilidade: 8,
-        tempo_estimado: "15-30s",
+        tempo_estimado: "15-25s",
         parametros_customizados: {
-            num_inference_steps: 25,
+            num_inference_steps: 20,
             guidance_scale: 7,
             width: 512,
             height: 512
@@ -168,17 +194,17 @@ const modelosHFPrioritarios = [
     }
 ];
 
-// APIs alternativas (sem necessidade de chave)
+// APIs alternativas MELHORADAS
 const apisAlternativas = [
     {
-        nome: "Pollinations AI",
-        confiabilidade: 9,
+        nome: "Pollinations AI (Flux)",
+        confiabilidade: 10,
         funcao: async (prompt) => {
             const encodedPrompt = encodeURIComponent(prompt);
             const seed = Math.floor(Math.random() * 1000000);
             const url = `${API_URLS.POLLINATIONS}${encodedPrompt}?width=1024&height=1024&model=flux&enhance=true&nologo=true&seed=${seed}`;
             
-            console.log('🔄 Gerando com Pollinations...');
+            console.log('🔄 Gerando com Pollinations Flux...');
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Status: ${response.status}`);
             
@@ -190,34 +216,19 @@ const apisAlternativas = [
     },
     {
         nome: "Pollinations Turbo",
-        confiabilidade: 7,
+        confiabilidade: 8,
         funcao: async (prompt) => {
             const encodedPrompt = encodeURIComponent(prompt);
-            const url = `${API_URLS.POLLINATIONS}${encodedPrompt}?width=512&height=512&model=turbo&enhance=false&nologo=true`;
+            const seed = Math.floor(Math.random() * 1000000);
+            const url = `${API_URLS.POLLINATIONS}${encodedPrompt}?width=512&height=512&model=turbo&enhance=false&nologo=true&seed=${seed}`;
             
+            console.log('🔄 Gerando com Pollinations Turbo...');
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Status: ${response.status}`);
             return await response.blob();
         }
     }
 ];
-
-// Parâmetros específicos por estilo
-const parametrosEstilos = {
-    BARROCO: {
-        num_inference_steps: 45,
-        guidance_scale: 11.5,
-        temperature: 0.8,
-        top_p: 0.92
-    },
-    RENASCENTISTA: {
-        num_inference_steps: 50,
-        guidance_scale: 9.5,
-        temperature: 0.7,
-        top_p: 0.9
-    }
-};
-
 // ============================================================================
 // FIM PARTE 3: MODELOS DE IA E PARÂMETROS
 // ============================================================================
