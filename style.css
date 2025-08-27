@@ -421,3 +421,248 @@ footer {
 .progress-container.error .progress-fill {
     background: linear-gradient(90deg, #dc3545, #e83e8c, #dc3545);
 }
+
+/* ============================================================================ */
+/* ESTILOS DOS BOTÕES DE COMPARTILHAMENTO */
+/* ============================================================================ */
+
+.compartilhar-section {
+    margin: 20px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.compartilhar-titulo {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 1.2em;
+}
+
+.compartilhar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Estilo base dos botões */
+.btn-social {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    font-size: 0.9em;
+    position: relative;
+    overflow: hidden;
+    min-height: 50px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-social:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+}
+
+.btn-social:active {
+    transform: translateY(0);
+    transition: all 0.1s;
+}
+
+/* Ícones */
+.btn-social .icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    transition: transform 0.3s ease;
+}
+
+.btn-social:hover .icon {
+    transform: scale(1.1);
+}
+
+/* Texto dos botões */
+.btn-text {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* ============================================================================ */
+/* CORES ESPECÍFICAS DE CADA REDE SOCIAL */
+/* ============================================================================ */
+
+/* WhatsApp - Verde */
+.btn-social.whatsapp {
+    background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+    color: white;
+}
+
+.btn-social.whatsapp:hover {
+    background: linear-gradient(135deg, #128C7E 0%, #25D366 100%);
+    box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
+}
+
+/* Facebook - Azul */
+.btn-social.facebook {
+    background: linear-gradient(135deg, #1877F2 0%, #42A5F5 100%);
+    color: white;
+}
+
+.btn-social.facebook:hover {
+    background: linear-gradient(135deg, #166FE5 0%, #1877F2 100%);
+    box-shadow: 0 4px 15px rgba(24, 119, 242, 0.4);
+}
+
+/* Twitter/X - Preto */
+.btn-social.twitter {
+    background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+    color: white;
+}
+
+.btn-social.twitter:hover {
+    background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+/* Telegram - Azul claro */
+.btn-social.telegram {
+    background: linear-gradient(135deg, #0088CC 0%, #00A0DC 100%);
+    color: white;
+}
+
+.btn-social.telegram:hover {
+    background: linear-gradient(135deg, #0077B5 0%, #0088CC 100%);
+    box-shadow: 0 4px 15px rgba(0, 136, 204, 0.4);
+}
+
+/* Email - Vermelho/Laranja */
+.btn-social.email {
+    background: linear-gradient(135deg, #EA4335 0%, #FBBC04 100%);
+    color: white;
+}
+
+.btn-social.email:hover {
+    background: linear-gradient(135deg, #D33B2C 0%, #EA4335 100%);
+    box-shadow: 0 4px 15px rgba(234, 67, 53, 0.4);
+}
+
+/* Compartilhar Nativo - Roxo/Azul */
+.btn-social.nativo {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-social.nativo:hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #667eea 100%);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* ============================================================================ */
+/* ANIMAÇÕES E EFEITOS ESPECIAIS */
+/* ============================================================================ */
+
+/* Efeito ripple nos botões */
+.btn-social::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.4s, height 0.4s;
+}
+
+.btn-social:active::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Indicador de carregamento */
+.btn-social.loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.btn-social.loading .icon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================================================ */
+/* RESPONSIVIDADE */
+/* ============================================================================ */
+
+/* Mobile */
+@media (max-width: 768px) {
+    .compartilhar-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .btn-social {
+        padding: 10px 12px;
+        font-size: 0.8em;
+    }
+    
+    .btn-social .icon {
+        width: 18px;
+        height: 18px;
+        margin-right: 6px;
+    }
+}
+
+/* Muito pequeno */
+@media (max-width: 480px) {
+    .compartilhar-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .btn-social {
+        justify-content: flex-start;
+        padding: 12px 20px;
+    }
+}
+
+/* ============================================================================ */
+/* ESTADOS DE FEEDBACK */
+/* ============================================================================ */
+
+/* Sucesso */
+.btn-social.success {
+    background: linear-gradient(135deg, #00C851 0%, #007E33 100%) !important;
+    animation: pulse-success 0.6s ease;
+}
+
+/* Erro */
+.btn-social.error {
+    background: linear-gradient(135deg, #ff4444 0%, #CC0000 100%) !important;
+    animation: shake 0.6s ease;
+}
+
+@keyframes pulse-success {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+}
