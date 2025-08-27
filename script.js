@@ -1,3 +1,6 @@
+
+
+
 // ============================================================================
 // INÍCIO PARTE 1: CONFIGURAÇÕES GLOBAIS E CONSTANTES
 // ============================================================================
@@ -1140,6 +1143,264 @@ console.log('💡 Dica: Use window.debugFunctions para acessar funções de debu
 // ============================================================================
 // FIM PARTE 13: EVENTOS E INICIALIZAÇÃO
 // ============================================================================
+
+// ============================================================================
+// CORREÇÃO 1: FUNÇÃO DE EXIBIR IMAGEM
+// ============================================================================
+
+async function exibirImagem(blob) {
+    console.log('🖼️ Exibindo imagem gerada...');
+    
+    // Procurar por diferentes possíveis elementos
+    const elementos = [
+        document.getElementById('canvasImagem'),
+        document.getElementById('imagemGerada'),
+        document.getElementById('imagem-ia'),
+        document.querySelector('.imagem-container img'),
+        document.querySelector('#canvas-container img')
+    ];
+    
+    const imagemElement = elementos.find(el => el !== null);
+    
+    if (!imagemElement) {
+        console.error('❌ Nenhum elemento de imagem encontrado no DOM!');
+        console.log('🔍 Procurados: canvasImagem, imagemGerada, imagem-ia, .imagem-container img');
+        return;
+    }
+    
+    console.log(`✅ Elemento encontrado: ${imagemElement.id || imagemElement.className}`);
+    
+    const imagemURL = URL.createObjectURL(blob);
+    
+    // Adicionar efeito de fade
+    imagemElement.style.opacity = '0';
+    imagemElement.src = imagemURL;
+    
+    imagemElement.onload = () => {
+        console.log('🖼️ Imagem carregada no DOM');
+        imagemElement.style.transition = 'opacity 1s';
+        imagemElement.style.opacity = '1';
+        
+        // Garantir visibilidade
+        imagemElement.style.display = 'block';
+        imagemElement.style.visibility = 'visible';
+    };
+    
+    imagemElement.onerror = () => {
+        console.error('❌ Erro ao carregar imagem no elemento');
+    };
+}
+
+// ============================================================================
+// CORREÇÃO 2: FUNÇÃO DE ATUALIZAR INTERFACE
+// ============================================================================
+
+function atualizarInterface() {
+    if (!versiculoAtual) {
+        console.error('❌ Nenhum versículo atual definido');
+        return;
+    }
+    
+    console.log('📝 Atualizando interface com versículo...');
+    
+    // Tentar múltiplos possíveis IDs para o texto
+    const elementosTexto = [
+        document.getElementById('versiculoTexto'),
+        document.getElementById('versiculo-texto'),
+        document.getElementById('texto-versiculo'),
+        document.querySelector('.versiculo-texto'),
+        document.querySelector('#versiculo p')
+    ];
+    
+    const elementoTexto = elementosTexto.find(el => el !== null);
+    
+    if (elementoTexto) {
+        console.log(`✅ Elemento de texto encontrado: ${elementoTexto.id || elementoTexto.className}`);
+        elementoTexto.textContent = versiculoAtual.texto;
+        elementoTexto.style.opacity = '0';
+        setTimeout(() => {
+            elementoTexto.style.transition = 'opacity 1s';
+            elementoTexto.style.opacity = '1';
+        }, 100);
+    } else {
+        console.error('❌ Elemento de texto não encontrado!');
+        console.log('🔍 Procurados: versiculoTexto, versiculo-texto, texto-versiculo, .versiculo-texto');
+    }
+    
+    // Tentar múltiplos possíveis IDs para a referência
+    const elementosReferencia = [
+        document.getElementById('versiculoReferencia'),
+        document.getElementById('versiculo-referencia'),
+        document.getElementById('referencia-versiculo'),
+        document.querySelector('.versiculo-referencia'),
+        document.querySelector('#versiculo small')
+    ];
+    
+    const elementoReferencia = elementosReferencia.find(el => el !== null);
+    
+    if (elementoReferencia) {
+        console.log(`✅ Elemento de referência encontrado: ${elementoReferencia.id || elementoReferencia.className}`);
+        elementoReferencia.textContent = versiculoAtual.referencia;
+    } else {
+        console.error('❌ Elemento de referência não encontrado!');
+        console.log('🔍 Procurados: versiculoReferencia, versiculo-referencia, referencia-versiculo');
+    }
+}
+
+// ============================================================================
+// CORREÇÃO 3: ATUALIZAR FUNÇÃO PRINCIPAL COM RETORNO CORRETO
+// ============================================================================
+
+async function tentarGerarImagemIA(promptBase, tema) {
+    const startTime = Date.now();
+    console.log('🚀 Iniciando geração inteligente...');
+    mostrarProgresso('Preparando geração...', 5);
+    
+    // ... código anterior ...
+    
+    // IMPORTANTE: Garantir que retornamos o blob
+    if (chave) {
+        console.log('🤖 Priorizando modelos Hugging Face...');
+        
+        for (let i = 0; i < modelosHFPrioritarios.length; i++) {
+            const modelo = modelosHFPrioritarios[i];
+            
+            try {
+                // ... código anterior ...
+                
+                const blob = await chamarAPIHuggingFaceSeguro(modelo.url, prompt, parametrosFinal);
+                
+                if (blob && blob.size > 5000) {
+                    const tempoTotal = Date.now() - startTime;
+                    console.log(`✅ ${modelo.nome} funcionou em ${formatarTempo(tempoTotal)}!`);
+                    mostrarToast(`🎨 Imagem criada por: ${modelo.nome} (${estilo})`, 'success');
+                    
+                    // RETORNAR O BLOB AQUI!
+                    return blob;
+                }
+                
+            } catch (error) {
+                console.log(`❌ ${modelo.nome} falhou: ${error.message}`);
+            }
+        }
+    }
+    
+    // ... resto do código ...
+}
+
+// ============================================================================
+// CORREÇÃO 4: FUNÇÃO DE DEBUG PARA VERIFICAR ELEMENTOS
+// ============================================================================
+
+function debugElementosDOM() {
+    console.log('🔍 === DEBUG DE ELEMENTOS DOM ===');
+    
+    // Listar todos os elementos com ID
+    const todosElementos = document.querySelectorAll('[id]');
+    console.log(`📋 Total de elementos com ID: ${todosElementos.length}`);
+    
+    // Filtrar elementos relevantes
+    const relevantes = Array.from(todosElementos).filter(el => {
+        const id = el.id.toLowerCase();
+        return id.includes('versiculo') || 
+               id.includes('texto') || 
+               id.includes('referencia') || 
+               id.includes('imagem') || 
+               id.includes('canvas') ||
+               id.includes('img');
+    });
+    
+    console.log('📝 Elementos relevantes encontrados:');
+    relevantes.forEach(el => {
+        console.log(`  - ID: "${el.id}" | Tag: <${el.tagName.toLowerCase()}> | Classes: "${el.className}"`);
+    });
+    
+    // Verificar imagens
+    const imagens = document.querySelectorAll('img');
+    console.log(`🖼️ Total de imagens: ${imagens.length}`);
+    imagens.forEach((img, i) => {
+        console.log(`  - Imagem ${i + 1}: ID="${img.id}" src="${img.src ? 'presente' : 'vazio'}"`);
+    });
+    
+    return relevantes;
+}
+
+// ============================================================================
+// CORREÇÃO 5: ADICIONAR CHAMADA DO DEBUG NA INICIALIZAÇÃO
+// ============================================================================
+
+async function inicializarSistema() {
+    console.log('🔍 INICIANDO DEBUG...');
+    
+    // ADICIONAR DEBUG DOS ELEMENTOS
+    debugElementosDOM();
+    
+    // ... resto do código de inicialização ...
+}
+
+// ============================================================================
+// CORREÇÃO 6: FUNÇÃO AUXILIAR PARA CRIAR ELEMENTOS SE NÃO EXISTIREM
+// ============================================================================
+
+function garantirElementosExistem() {
+    console.log('🔧 Verificando/criando elementos necessários...');
+    
+    // Garantir container principal existe
+    let container = document.getElementById('conteudo-principal') || 
+                   document.querySelector('.container') ||
+                   document.querySelector('main') ||
+                   document.body;
+    
+    // Criar elemento de imagem se não existir
+    if (!document.getElementById('canvasImagem') && !document.getElementById('imagemGerada')) {
+        console.log('📦 Criando elemento de imagem...');
+        const img = document.createElement('img');
+        img.id = 'canvasImagem';
+        img.className = 'imagem-gerada';
+        img.style.cssText = 'width: 100%; max-width: 600px; height: auto; display: block;';
+        
+        // Procurar onde inserir
+        const imgContainer = document.querySelector('.imagem-container') || 
+                           document.querySelector('#canvas-container') ||
+                           container;
+        imgContainer.appendChild(img);
+    }
+    
+    // Criar elemento de texto se não existir
+    if (!document.getElementById('versiculoTexto')) {
+        console.log('📦 Criando elemento de texto...');
+        const texto = document.createElement('p');
+        texto.id = 'versiculoTexto';
+        texto.className = 'versiculo-texto';
+        texto.style.cssText = 'font-size: 1.2em; margin: 20px 0;';
+        
+        const textContainer = document.querySelector('.versiculo-container') || 
+                            document.querySelector('#versiculo') ||
+                            container;
+        textContainer.appendChild(texto);
+    }
+    
+    // Criar elemento de referência se não existir
+    if (!document.getElementById('versiculoReferencia')) {
+        console.log('📦 Criando elemento de referência...');
+        const ref = document.createElement('small');
+        ref.id = 'versiculoReferencia';
+        ref.className = 'versiculo-referencia';
+        ref.style.cssText = 'font-style: italic; color: #666;';
+        
+        const refContainer = document.querySelector('.versiculo-container') || 
+                           document.querySelector('#versiculo') ||
+                           container;
+        refContainer.appendChild(ref);
+    }
+}
+
+// Chamar no início da inicialização
+document.addEventListener('DOMContentLoaded', () => {
+    garantirElementosExistem();
+    inicializarSistema();
+});
+
 
 // ============================================================================
 // FIM DO ARQUIVO SCRIPT.JS
