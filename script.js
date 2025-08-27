@@ -1815,70 +1815,188 @@ async function gerarNovoVersiculo() {
 // INÍCIO PARTE 12: SISTEMA DE COMPARTILHAMENTO E DOWNLOAD
 // ============================================================================
 
-// Compartilhar versículo
-async function compartilharVersiculo() {
-    if (!versiculoAtual) return;
-    
-    const canvas = document.getElementById('canvasImagem');
-    const textoCompleto = `${versiculoAtual.texto}\n- ${versiculoAtual.referencia}`;
-    
-    if (navigator.share && canvas) {
-        try {
-            canvas.toBlob(async (blob) => {
-                const file = new File([blob], 'versiculo.png', { type: 'image/png' });
-                
-                await navigator.share({
-                    title: 'Versículo do Dia',
-                    text: textoCompleto,
-                    files: [file]
-                });
-                
-                console.log('✅ Compartilhado com sucesso!');
-                mostrarToast('Compartilhado com sucesso!', 'success');
-            }, 'image/png');
-            
-        } catch (error) {
-            console.log('❌ Erro ao compartilhar:', error);
-            copiarTextoParaClipboard(textoCompleto);
-        }
-    } else {
-        copiarTextoParaClipboard(textoCompleto);
-    }
-}
+// ============================================================================
+// SISTEMA DE COMPARTILHAMENTO CORRIGIDO
+// ============================================================================
 
-// Copiar texto para clipboard
-function copiarTextoParaClipboard(texto) {
-    navigator.clipboard.writeText(texto).then(() => {
-        console.log('📋 Texto copiado para clipboard');
-        mostrarToast('Texto copiado!', 'success');
-    }).catch(error => {
-        console.error('❌ Erro ao copiar:', error);
-        mostrarToast('Erro ao copiar texto', 'error');
-    });
-}
-
-// Baixar imagem do canvas
-function baixarImagem() {
-    const canvas = document.getElementById('canvasImagem');
-    
-    if (!canvas || canvas.tagName !== 'CANVAS') {
-        console.error('❌ Canvas não encontrado para download');
+// Função principal de compartilhamento
+async function compartilharVersiculo(plataforma = null) {
+    if (!versiculoAtual) {
+        mostrarToast('❌ Nenhum versículo para compartilhar', 'error');
         return;
     }
     
-    canvas.toBlob(function(blob) {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.download = `versiculo_${Date.now()}.png`;
-        link.href = url;
-        link.click();
+    const canvas = document.getElementById('canvasImagem');
+    if (!canvas) {
+        mostrarToast('❌ Imagem não encontrada', 'error');
+        return;
+    }
+    
+    try {
+        // Preparar dados para compartilhamento
+        const dados = await prepararDadosCompartilhamento();
         
-        setTimeout(() => URL.revokeObjectURL(url), 100);
+        if (plataforma) {
+            // Compartilhar em plataforma específica
+            await compartilharPlataforma(plataforma, dados);
+        } else {
+            // Usar Web Share API (nativo do navegador)
+            await compartilharNativo(dados);
+        }
         
-        console.log('⬇️ Download iniciado');
-        mostrarToast('Download iniciado!', 'success');
-    }, 'image/png');
+    } catch (error) {
+        console.error('❌ Erro no compartilhamento:', error);
+        mostrarToast('❌ Erro ao compartilhar', 'error');
+    }
 }
+
+// Preparar dados do versículo para compartilhamento
+async function prepararDadosCompartilhamento() {
+    const { versiculo, referencia } = versiculoAtual;
+    
+    // Texto para compartilhamento
+    const texto = `"${versiculo}"\n\n📖 ${referencia}\n\n✨ Compartilhado via Versículos Inspiradores`;
+    
+    // URL da página (se disponível)
+    const url = window.location.href;
+    
+    // Tentar converter canvas para blob
+    let imageBlob = null;
+    try {
+        const canvas = document.getElementById('canvasImagem');
+        if (canvas) {
+            imageBlob = await new Promise(resolve => {
+                canvas.toBlob(resolve, 'image/png', 0.95);
+            });
+        }
+    } catch (error) {
+        console.warn('⚠️ Não foi possível preparar imagem:', error);
+    }
+    
+    return {
+        titulo: `Versículo: ${referencia}`,
+        texto: texto,
+        textoEncoded: encodeURIComponent(texto),
+        url: url,
+        urlEncoded: encodeURIComponent(url),
+        imageBlob: imageBlob
+    };
+}
+
+// Compartilhamento nativo (Web Share API)
+async function compartilharNativo(dados) {
+    if (navigator.share) {
+        const shareData = {
+            title: dados.titulo,
+            text: dados.texto,
+            url: dados.url
+        };
+        
+        // Adicionar imagem se disponível (apenas alguns navegadores suportam)
+        if (dados.imageBlob && navigator.canShare && navigator.canShare({ files: [new File([dados.imageBlob], 'versiculo.png', { type: 'image/png' })] })) {
+            shareData.files = [new File([dados.imageBlob], 'versiculo.png', { type: 'image/png' })];
+        }
+        
+        await navigator.share(shareData);
+        mostrarToast('✅ Compartilhado com sucesso!', 'success');
+        
+    } else {
+        // Fallback: copiar para clipboard
+        await copiarParaClipboard(dados.texto);
+        mostrarToast('📋 Texto copiado para a área de transferência!', 'success');
+    }
+}
+
+// Compartilhar em plataforma específica
+async function compartilharPlataforma(plataforma, dados) {
+    const urls = {
+        whatsapp: `https://wa.me/?text=${dados.textoEncoded}`,
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${dados.urlEncoded}&quote=${dados.textoEncoded}`,
+        twitter: `https://twitter.com/intent/tweet?text=${dados.textoEncoded}&url=${dados.urlEncoded}`,
+        telegram: `https://t.me/share/url?url=${dados.urlEncoded}&text=${dados.textoEncoded}`,
+        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${dados.urlEncoded}`,
+        email: `mailto:?subject=${encodeURIComponent(dados.titulo)}&body=${dados.textoEncoded}`
+    };
+    
+    const url = urls[plataforma.toLowerCase()];
+    
+    if (!url) {
+        throw new Error(`Plataforma "${plataforma}" não suportada`);
+    }
+    
+    // Abrir em nova janela/aba
+    const janela = window.open(url, '_blank', 'width=600,height=400,scrollbars=yes,resizable=yes');
+    
+    if (!janela) {
+        // Se o popup foi bloqueado, tentar redirect direto
+        window.location.href = url;
+    } else {
+        mostrarToast(`✅ Compartilhando no ${plataforma}...`, 'success');
+        
+        // Fechar janela automaticamente após alguns segundos (opcional)
+        setTimeout(() => {
+            try {
+                if (janela && !janela.closed) {
+                    janela.close();
+                }
+            } catch (e) {
+                // Ignorar erro se não conseguir fechar
+            }
+        }, 5000);
+    }
+}
+
+// Função auxiliar para copiar texto
+async function copiarParaClipboard(texto) {
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(texto);
+        } else {
+            // Fallback para navegadores mais antigos
+            const textArea = document.createElement('textarea');
+            textArea.value = texto;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+        }
+    } catch (error) {
+        console.error('❌ Erro ao copiar:', error);
+        throw error;
+    }
+}
+
+// Funções específicas para cada botão
+function compartilharWhatsApp() {
+    console.log('📱 Compartilhando no WhatsApp...');
+    compartilharVersiculo('whatsapp');
+}
+
+function compartilharFacebook() {
+    console.log('👥 Compartilhando no Facebook...');
+    compartilharVersiculo('facebook');
+}
+
+function compartilharTwitter() {
+    console.log('🐦 Compartilhando no Twitter...');
+    compartilharVersiculo('twitter');
+}
+
+function compartilharTelegram() {
+    console.log('💬 Compartilhando no Telegram...');
+    compartilharVersiculo('telegram');
+}
+
+function compartilharEmail() {
+    console.log('📧 Compartilhando por email...');
+    compartilharVersiculo('email');
+}
+
+// ============================================================================
+// FIM DO SISTEMA DE COMPARTILHAMENTO
+// ============================================================================
 
 // ============================================================================
 // FIM PARTE 12: SISTEMA DE COMPARTILHAMENTO E DOWNLOAD
