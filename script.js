@@ -1145,54 +1145,74 @@ console.log('💡 Dica: Use window.debugFunctions para acessar funções de debu
 // ============================================================================
 
 // ============================================================================
-// CORREÇÃO 1: FUNÇÃO DE EXIBIR IMAGEM
+// CORREÇÃO PRINCIPAL: EXIBIR IMAGEM NO CANVAS
 // ============================================================================
 
 async function exibirImagem(blob) {
-    console.log('🖼️ Exibindo imagem gerada...');
+    console.log('🖼️ Exibindo imagem no canvas...');
     
-    // Procurar por diferentes possíveis elementos
-    const elementos = [
-        document.getElementById('canvasImagem'),
-        document.getElementById('imagemGerada'),
-        document.getElementById('imagem-ia'),
-        document.querySelector('.imagem-container img'),
-        document.querySelector('#canvas-container img')
-    ];
+    const canvas = document.getElementById('canvasImagem');
     
-    const imagemElement = elementos.find(el => el !== null);
-    
-    if (!imagemElement) {
-        console.error('❌ Nenhum elemento de imagem encontrado no DOM!');
-        console.log('🔍 Procurados: canvasImagem, imagemGerada, imagem-ia, .imagem-container img');
+    if (!canvas) {
+        console.error('❌ Canvas não encontrado!');
         return;
     }
     
-    console.log(`✅ Elemento encontrado: ${imagemElement.id || imagemElement.className}`);
+    // Verificar se é realmente um canvas
+    if (canvas.tagName !== 'CANVAS') {
+        console.error(`❌ Elemento canvasImagem não é um canvas, é um ${canvas.tagName}`);
+        return;
+    }
     
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    // Criar URL da imagem
     const imagemURL = URL.createObjectURL(blob);
     
-    // Adicionar efeito de fade
-    imagemElement.style.opacity = '0';
-    imagemElement.src = imagemURL;
-    
-    imagemElement.onload = () => {
-        console.log('🖼️ Imagem carregada no DOM');
-        imagemElement.style.transition = 'opacity 1s';
-        imagemElement.style.opacity = '1';
+    img.onload = function() {
+        console.log(`✅ Imagem carregada: ${img.width}x${img.height}`);
         
-        // Garantir visibilidade
-        imagemElement.style.display = 'block';
-        imagemElement.style.visibility = 'visible';
+        // Ajustar tamanho do canvas
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        // Limpar canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Desenhar imagem
+        ctx.drawImage(img, 0, 0);
+        
+        console.log('🎨 Imagem desenhada no canvas!');
+        
+        // Adicionar fade in
+        canvas.style.opacity = '0';
+        canvas.style.transition = 'opacity 1s';
+        setTimeout(() => {
+            canvas.style.opacity = '1';
+        }, 50);
+        
+        // Limpar URL após uso
+        URL.revokeObjectURL(imagemURL);
+        
+        // Habilitar botão de download
+        const btnBaixar = document.getElementById('baixarImagem');
+        if (btnBaixar) {
+            btnBaixar.disabled = false;
+        }
     };
     
-    imagemElement.onerror = () => {
-        console.error('❌ Erro ao carregar imagem no elemento');
+    img.onerror = function() {
+        console.error('❌ Erro ao carregar imagem');
+        URL.revokeObjectURL(imagemURL);
     };
+    
+    // Iniciar carregamento
+    img.src = imagemURL;
 }
 
 // ============================================================================
-// CORREÇÃO 2: FUNÇÃO DE ATUALIZAR INTERFACE
+// CORREÇÃO: ATUALIZAR INTERFACE (versículo já funciona, mas vamos garantir)
 // ============================================================================
 
 function atualizarInterface() {
@@ -1201,207 +1221,201 @@ function atualizarInterface() {
         return;
     }
     
-    console.log('📝 Atualizando interface com versículo...');
+    console.log('📝 Atualizando texto do versículo...');
     
-    // Tentar múltiplos possíveis IDs para o texto
-    const elementosTexto = [
-        document.getElementById('versiculoTexto'),
-        document.getElementById('versiculo-texto'),
-        document.getElementById('texto-versiculo'),
-        document.querySelector('.versiculo-texto'),
-        document.querySelector('#versiculo p')
-    ];
-    
-    const elementoTexto = elementosTexto.find(el => el !== null);
-    
+    // Atualizar texto
+    const elementoTexto = document.getElementById('versiculoTexto');
     if (elementoTexto) {
-        console.log(`✅ Elemento de texto encontrado: ${elementoTexto.id || elementoTexto.className}`);
         elementoTexto.textContent = versiculoAtual.texto;
         elementoTexto.style.opacity = '0';
         setTimeout(() => {
             elementoTexto.style.transition = 'opacity 1s';
             elementoTexto.style.opacity = '1';
         }, 100);
-    } else {
-        console.error('❌ Elemento de texto não encontrado!');
-        console.log('🔍 Procurados: versiculoTexto, versiculo-texto, texto-versiculo, .versiculo-texto');
+        console.log('✅ Texto atualizado');
     }
     
-    // Tentar múltiplos possíveis IDs para a referência
-    const elementosReferencia = [
-        document.getElementById('versiculoReferencia'),
-        document.getElementById('versiculo-referencia'),
-        document.getElementById('referencia-versiculo'),
-        document.querySelector('.versiculo-referencia'),
-        document.querySelector('#versiculo small')
-    ];
-    
-    const elementoReferencia = elementosReferencia.find(el => el !== null);
-    
+    // Atualizar referência
+    const elementoReferencia = document.getElementById('versiculoReferencia');
     if (elementoReferencia) {
-        console.log(`✅ Elemento de referência encontrado: ${elementoReferencia.id || elementoReferencia.className}`);
         elementoReferencia.textContent = versiculoAtual.referencia;
-    } else {
-        console.error('❌ Elemento de referência não encontrado!');
-        console.log('🔍 Procurados: versiculoReferencia, versiculo-referencia, referencia-versiculo');
+        console.log('✅ Referência atualizada');
+    }
+    
+    // Atualizar contador
+    const contador = document.getElementById('contadorVersiculos');
+    if (contador) {
+        const count = parseInt(contador.textContent || '0') + 1;
+        contador.textContent = count;
+        console.log(`✅ Contador: ${count}`);
     }
 }
 
 // ============================================================================
-// CORREÇÃO 3: ATUALIZAR FUNÇÃO PRINCIPAL COM RETORNO CORRETO
+// CORREÇÃO: FUNÇÃO DE DOWNLOAD DO CANVAS
 // ============================================================================
 
-async function tentarGerarImagemIA(promptBase, tema) {
-    const startTime = Date.now();
-    console.log('🚀 Iniciando geração inteligente...');
-    mostrarProgresso('Preparando geração...', 5);
+function baixarImagem() {
+    const canvas = document.getElementById('canvasImagem');
     
-    // ... código anterior ...
+    if (!canvas || canvas.tagName !== 'CANVAS') {
+        console.error('❌ Canvas não encontrado para download');
+        return;
+    }
     
-    // IMPORTANTE: Garantir que retornamos o blob
-    if (chave) {
-        console.log('🤖 Priorizando modelos Hugging Face...');
+    // Converter canvas para blob
+    canvas.toBlob(function(blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `versiculo_${Date.now()}.png`;
+        link.href = url;
+        link.click();
         
-        for (let i = 0; i < modelosHFPrioritarios.length; i++) {
-            const modelo = modelosHFPrioritarios[i];
+        // Limpar URL
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+        
+        console.log('⬇️ Download iniciado');
+        mostrarToast('Download iniciado!', 'success');
+    }, 'image/png');
+}
+
+// ============================================================================
+// ADICIONAR: FUNÇÃO PARA ADICIONAR TEXTO NO CANVAS (OPCIONAL)
+// ============================================================================
+
+function adicionarTextoNoCanvas() {
+    if (!versiculoAtual) return;
+    
+    const canvas = document.getElementById('canvasImagem');
+    if (!canvas || canvas.tagName !== 'CANVAS') return;
+    
+    const ctx = canvas.getContext('2d');
+    const posicao = document.getElementById('posicaoTexto')?.value || 'bottom';
+    
+    // Configurar fonte
+    ctx.font = 'bold 24px Arial';
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 3;
+    ctx.textAlign = 'center';
+    
+    // Calcular posição
+    const x = canvas.width / 2;
+    let y;
+    
+    switch(posicao) {
+        case 'top':
+            y = 50;
+            break;
+        case 'center':
+            y = canvas.height / 2;
+            break;
+        case 'bottom':
+        default:
+            y = canvas.height - 50;
+            break;
+    }
+    
+    // Desenhar texto com contorno
+    ctx.strokeText(versiculoAtual.texto, x, y);
+    ctx.fillText(versiculoAtual.texto, x, y);
+    
+    // Adicionar referência menor
+    ctx.font = 'italic 18px Arial';
+    ctx.strokeText(versiculoAtual.referencia, x, y + 30);
+    ctx.fillText(versiculoAtual.referencia, x, y + 30);
+    
+    console.log('📝 Texto adicionado ao canvas');
+}
+
+// ============================================================================
+// CORREÇÃO: CONFIGURAR EVENTOS CORRETAMENTE
+// ============================================================================
+
+function configurarEventos() {
+    console.log('⚙️ Configurando eventos...');
+    
+    // Botão gerar versículo
+    const btnGerar = document.getElementById('gerarVersiculo');
+    if (btnGerar) {
+        btnGerar.addEventListener('click', async () => {
+            btnGerar.disabled = true;
+            btnGerar.textContent = 'Gerando...';
             
-            try {
-                // ... código anterior ...
-                
-                const blob = await chamarAPIHuggingFaceSeguro(modelo.url, prompt, parametrosFinal);
-                
-                if (blob && blob.size > 5000) {
-                    const tempoTotal = Date.now() - startTime;
-                    console.log(`✅ ${modelo.nome} funcionou em ${formatarTempo(tempoTotal)}!`);
-                    mostrarToast(`🎨 Imagem criada por: ${modelo.nome} (${estilo})`, 'success');
-                    
-                    // RETORNAR O BLOB AQUI!
-                    return blob;
-                }
-                
-            } catch (error) {
-                console.log(`❌ ${modelo.nome} falhou: ${error.message}`);
+            await gerarNovoVersiculo();
+            
+            btnGerar.disabled = false;
+            btnGerar.textContent = 'Gerar Novo Versículo';
+        });
+        console.log('✅ Evento: Gerar Versículo configurado');
+    }
+    
+    // Botão baixar
+    const btnBaixar = document.getElementById('baixarImagem');
+    if (btnBaixar) {
+        btnBaixar.addEventListener('click', baixarImagem);
+        console.log('✅ Evento: Baixar Imagem configurado');
+    }
+    
+    // Botão copiar texto
+    const btnCopiar = document.getElementById('copiarTexto');
+    if (btnCopiar) {
+        btnCopiar.addEventListener('click', () => {
+            if (versiculoAtual) {
+                const texto = `${versiculoAtual.texto}\n- ${versiculoAtual.referencia}`;
+                navigator.clipboard.writeText(texto).then(() => {
+                    console.log('📋 Texto copiado');
+                    mostrarToast('Texto copiado!', 'success');
+                });
             }
-        }
+        });
+        console.log('✅ Evento: Copiar Texto configurado');
     }
     
-    // ... resto do código ...
-}
-
-// ============================================================================
-// CORREÇÃO 4: FUNÇÃO DE DEBUG PARA VERIFICAR ELEMENTOS
-// ============================================================================
-
-function debugElementosDOM() {
-    console.log('🔍 === DEBUG DE ELEMENTOS DOM ===');
-    
-    // Listar todos os elementos com ID
-    const todosElementos = document.querySelectorAll('[id]');
-    console.log(`📋 Total de elementos com ID: ${todosElementos.length}`);
-    
-    // Filtrar elementos relevantes
-    const relevantes = Array.from(todosElementos).filter(el => {
-        const id = el.id.toLowerCase();
-        return id.includes('versiculo') || 
-               id.includes('texto') || 
-               id.includes('referencia') || 
-               id.includes('imagem') || 
-               id.includes('canvas') ||
-               id.includes('img');
-    });
-    
-    console.log('📝 Elementos relevantes encontrados:');
-    relevantes.forEach(el => {
-        console.log(`  - ID: "${el.id}" | Tag: <${el.tagName.toLowerCase()}> | Classes: "${el.className}"`);
-    });
-    
-    // Verificar imagens
-    const imagens = document.querySelectorAll('img');
-    console.log(`🖼️ Total de imagens: ${imagens.length}`);
-    imagens.forEach((img, i) => {
-        console.log(`  - Imagem ${i + 1}: ID="${img.id}" src="${img.src ? 'presente' : 'vazio'}"`);
-    });
-    
-    return relevantes;
-}
-
-// ============================================================================
-// CORREÇÃO 5: ADICIONAR CHAMADA DO DEBUG NA INICIALIZAÇÃO
-// ============================================================================
-
-async function inicializarSistema() {
-    console.log('🔍 INICIANDO DEBUG...');
-    
-    // ADICIONAR DEBUG DOS ELEMENTOS
-    debugElementosDOM();
-    
-    // ... resto do código de inicialização ...
-}
-
-// ============================================================================
-// CORREÇÃO 6: FUNÇÃO AUXILIAR PARA CRIAR ELEMENTOS SE NÃO EXISTIREM
-// ============================================================================
-
-function garantirElementosExistem() {
-    console.log('🔧 Verificando/criando elementos necessários...');
-    
-    // Garantir container principal existe
-    let container = document.getElementById('conteudo-principal') || 
-                   document.querySelector('.container') ||
-                   document.querySelector('main') ||
-                   document.body;
-    
-    // Criar elemento de imagem se não existir
-    if (!document.getElementById('canvasImagem') && !document.getElementById('imagemGerada')) {
-        console.log('📦 Criando elemento de imagem...');
-        const img = document.createElement('img');
-        img.id = 'canvasImagem';
-        img.className = 'imagem-gerada';
-        img.style.cssText = 'width: 100%; max-width: 600px; height: auto; display: block;';
-        
-        // Procurar onde inserir
-        const imgContainer = document.querySelector('.imagem-container') || 
-                           document.querySelector('#canvas-container') ||
-                           container;
-        imgContainer.appendChild(img);
-    }
-    
-    // Criar elemento de texto se não existir
-    if (!document.getElementById('versiculoTexto')) {
-        console.log('📦 Criando elemento de texto...');
-        const texto = document.createElement('p');
-        texto.id = 'versiculoTexto';
-        texto.className = 'versiculo-texto';
-        texto.style.cssText = 'font-size: 1.2em; margin: 20px 0;';
-        
-        const textContainer = document.querySelector('.versiculo-container') || 
-                            document.querySelector('#versiculo') ||
-                            container;
-        textContainer.appendChild(texto);
-    }
-    
-    // Criar elemento de referência se não existir
-    if (!document.getElementById('versiculoReferencia')) {
-        console.log('📦 Criando elemento de referência...');
-        const ref = document.createElement('small');
-        ref.id = 'versiculoReferencia';
-        ref.className = 'versiculo-referencia';
-        ref.style.cssText = 'font-style: italic; color: #666;';
-        
-        const refContainer = document.querySelector('.versiculo-container') || 
-                           document.querySelector('#versiculo') ||
-                           container;
-        refContainer.appendChild(ref);
+    // Mudança de posição do texto
+    const selectPosicao = document.getElementById('posicaoTexto');
+    if (selectPosicao) {
+        selectPosicao.addEventListener('change', adicionarTextoNoCanvas);
+        console.log('✅ Evento: Posição Texto configurado');
     }
 }
 
-// Chamar no início da inicialização
-document.addEventListener('DOMContentLoaded', () => {
-    garantirElementosExistem();
-    inicializarSistema();
-});
+// ============================================================================
+// TESTE MANUAL: Função para testar com uma imagem de exemplo
+// ============================================================================
 
+async function testarComImagemExemplo() {
+    console.log('🧪 Testando com imagem de exemplo...');
+    
+    // Criar um blob de teste com uma imagem simples
+    const response = await fetch('https://picsum.photos/800/600');
+    const blob = await response.blob();
+    
+    // Definir versículo de teste
+    versiculoAtual = {
+        texto: "Este é um teste do sistema",
+        referencia: "Teste 1:1",
+        tema: "teste"
+    };
+    
+    // Atualizar interface
+    atualizarInterface();
+    
+    // Exibir imagem
+    await exibirImagem(blob);
+    
+    console.log('✅ Teste concluído!');
+}
 
+// Adicionar ao debug functions
+window.debugFunctions = {
+    ...window.debugFunctions,
+    testarImagem: testarComImagemExemplo,
+    adicionarTexto: adicionarTextoNoCanvas,
+    baixar: baixarImagem
+};
+
+console.log('💡 Use: window.debugFunctions.testarImagem() para testar o canvas');
 // ============================================================================
 // FIM DO ARQUIVO SCRIPT.JS
 // ============================================================================
