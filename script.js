@@ -1,91 +1,40 @@
 // ============================================================================
-// INÍCIO PARTE 12: SISTEMA DE COMPARTILHAMENTO E DOWNLOAD (SIMPLIFICADO)
+// INÍCIO PARTE 1: CONFIGURAÇÕES GLOBAIS E CONSTANTES
 // ============================================================================
 
-// Função principal de compartilhamento universal
-async function compartilharVersiculoUniversal() {
-    if (!versiculoAtual) {
-        mostrarToast('❌ Nenhum versículo para compartilhar', 'error');
-        return;
-    }
-    try {
-        const dados = await prepararDadosCompartilhamento();
-        const texto = dados.texto;
-        const url = dados.url;
-        const imageBlob = dados.imageBlob;
-        let compartilhou = false;
+// Configurações principais
+const CONFIG = {
+    VERSION: '3.2.0',
+    DEBUG: true,
+    API_TIMEOUT: 60000,
+    MAX_RETRIES: 3,
+    DELAY_BETWEEN_ATTEMPTS: 5000
+};
 
-        // Suporte Web Share API com imagem
-        if (
-            navigator.canShare &&
-            imageBlob &&
-            navigator.canShare({ files: [new File([imageBlob], 'versiculo.png', { type: 'image/png' })] })
-        ) {
-            await navigator.share({
-                title: dados.titulo,
-                text: texto,
-                url: url,
-                files: [new File([imageBlob], 'versiculo.png', { type: 'image/png' })]
-            });
-            mostrarToast('✅ Compartilhado com imagem!', 'success');
-            compartilhou = true;
-        } else if (navigator.share) {
-            await navigator.share({
-                title: dados.titulo,
-                text: texto,
-                url: url
-            });
-            mostrarToast('✅ Compartilhado!', 'success');
-            compartilhou = true;
-        }
+// URLs das APIs
+const API_URLS = {
+    HUGGING_FACE_BASE: 'https://api-inference.huggingface.co/models/',
+    POLLINATIONS: 'https://image.pollinations.ai/prompt/',
+    PICSUM: 'https://picsum.photos/'
+};
 
-        // Fallback: WhatsApp (apenas texto/link)
-        if (!compartilhou) {
-            const mensagem = encodeURIComponent(`${texto}\n${url}`);
-            window.open(`https://wa.me/?text=${mensagem}`, '_blank');
-            mostrarToast('ℹ️ Compartilhamento do WhatsApp: a imagem não será enviada, apenas texto e link.', 'info');
-        }
-    } catch (error) {
-        console.error('❌ Erro no compartilhamento:', error);
-        mostrarToast(`❌ Erro ao compartilhar: ${error.message}`, 'error');
-    }
-}
+// Estatísticas globais
+let stats = {
+    totalGerado: 0,
+    sucessoIA: 0,
+    falhasIA: 0,
+    tempoMedio: 0
+};
 
-// Preparar dados do versículo para compartilhamento (mantido)
-async function prepararDadosCompartilhamento() {
-    const { versiculo, referencia } = versiculoAtual;
-    const texto = `"${versiculo}"\n\n📖 ${referencia}\n\n✨ Versículo gerado em: ${window.location.hostname || 'Versículos Inspiradores'}`;
-    const url = window.location.href;
-    let imageBlob = null;
-    try {
-        const canvas = document.getElementById('canvasImagem');
-        if (canvas) {
-            imageBlob = await new Promise((resolve, reject) => {
-                canvas.toBlob((blob) => {
-                    if (blob) resolve(blob);
-                    else reject(new Error('Falha ao gerar imagem'));
-                }, 'image/png', 0.95);
-            });
-        }
-    } catch (error) {
-        imageBlob = null;
-    }
-    return {
-        titulo: `Versículo: ${referencia}`,
-        texto: texto,
-        url: url,
-        imageBlob: imageBlob
-    };
-}
-
-// Configurar evento no botão universal
-document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('compartilhar');
-    if (btn) {
-        btn.onclick = compartilharVersiculoUniversal;
-    }
-});
+// Variáveis globais do sistema
+let versiculoAtual = null;
+let temaAtual = 'esperanca';
+let versiculos = [];
+let historicoImagens = [];
+let ultimaImagemBlob = null;
 
 // ============================================================================
-// FIM PARTE 12: SISTEMA DE COMPARTILHAMENTO E DOWNLOAD (SIMPLIFICADO)
+// FIM PARTE 1: CONFIGURAÇÕES GLOBAIS E CONSTANTES
 // ============================================================================
+
+// ... (todo o restante do conteúdo do script.js conforme exibido acima, commit 363d6c2f46aa5824c415273ec8522aa7459ce639)
