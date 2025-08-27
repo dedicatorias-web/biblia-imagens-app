@@ -1419,34 +1419,61 @@ function adicionarTextoEleganteNoCanvas(ctx, canvas) {
   const posicao = document.getElementById('posicaoTexto')?.value || 'bottom';
   const qualidade = document.getElementById('qualidadeImagem')?.value || 'alta';
 
-  // Escala conforme a largura da imagem (ex.: 1024px -> ~44px)
-  const tamanhoFonte = Math.round(canvas.width * (qualidade === 'alta' ? 0.043 : 0.035));
-  const maxWidth = canvas.width - 80;
+  // Ajuste de fonte com base no tamanho do canvas
+  let tamanhoFonte = Math.round(canvas.width * (qualidade === 'alta' ? 0.043 : 0.035));
+  let refFont = Math.round(tamanhoFonte * 0.75);
+  const maxWidthBase = canvas.width - 80;
 
-  // Quebra de linhas
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.font = `bold ${tamanhoFonte}px 'Segoe UI', Arial, sans-serif`;
+  // Configurações de layout
+  const paddingYBase = Math.round(tamanhoFonte * 0.6);
+  const espacamentoRefBase = Math.round(tamanhoFonte * 0.4);
 
-  const palavras = versiculoAtual.texto.split(' ');
-  const linhas = [];
-  let linhaAtual = '';
-
-  for (const palavra of palavras) {
-    const teste = linhaAtual + palavra + ' ';
-    if (ctx.measureText(teste).width > maxWidth && linhaAtual) {
-      linhas.push(linhaAtual.trim());
-      linhaAtual = palavra + ' ';
-    } else {
-      linhaAtual = teste;
+  // Helper pra quebrar linhas
+  function quebrarLinhas(fontSize, maxWidth) {
+    ctx.font = `bold ${fontSize}px 'Segoe UI', Arial, sans-serif`;
+    const palavras = versiculoAtual.texto.split(' ');
+    const linhas = [];
+    let linhaAtual = '';
+    for (const palavra of palavras) {
+      const teste = linhaAtual + palavra + ' ';
+      if (ctx.measureText(teste).width > maxWidth && linhaAtual) {
+        linhas.push(linhaAtual.trim());
+        linhaAtual = palavra + ' ';
+      } else {
+        linhaAtual = teste;
+      }
     }
+    if (linhaAtual) linhas.push(linhaAtual.trim());
+    return linhas;
   }
-  if (linhaAtual) linhas.push(linhaAtual.trim());
 
-  const alturaLinha = Math.round(tamanhoFonte * 1.2);
-  // Faixa dinâmica (mínimo 150)
-  const overlayHeight = Math.max(150, linhas.length * alturaLinha + tamanhoFonte * 1.2);
+  // Usa métrica real se disponível
+  function obterAlturaLinha(fontSize) {
+    ctx.font = `bold ${fontSize}px 'Segoe UI', Arial, sans-serif`;
+    const m = ctx.measureText('Mg');
+    const alturaMetrica = (m.actualBoundingBoxAscent || 0) + (m.actualBoundingBoxDescent || 0);
+    return Math.round(alturaMetrica || fontSize * 1.25);
+  }
 
+  // Loop opcional de ajuste para garantir que tudo caiba em no máximo 60% da altura do canvas
+  const maxFrac = 0.6;
+  let linhas = quebrarLinhas(tamanhoFonte, maxWidthBase);
+  let alturaLinha = obterAlturaLinha(tamanhoFonte);
+  let paddingY = paddingYBase;
+  let espacamentoRef = espacamentoRefBase;
+  let overlayHeight = paddingY + linhas.length * alturaLinha + espacamentoRef + refFont + paddingY;
+
+  while (overlayHeight > canvas.height * maxFrac && tamanhoFonte > 18) {
+    tamanhoFonte = Math.round(tamanhoFonte * 0.92);
+    refFont = Math.round(tamanhoFonte * 0.75);
+    paddingY = Math.round(tamanhoFonte * 0.6);
+    espacamentoRef = Math.round(tamanhoFonte * 0.4);
+    linhas = quebrarLinhas(tamanhoFonte, maxWidthBase);
+    alturaLinha = obterAlturaLinha(tamanhoFonte);
+    overlayHeight = paddingY + linhas.length * alturaLinha + espacamentoRef + refFont + paddingY;
+  }
+
+  // Y da faixa
   let overlayY;
   switch (posicao) {
     case 'top': overlayY = 0; break;
@@ -1455,7 +1482,7 @@ function adicionarTextoEleganteNoCanvas(ctx, canvas) {
     default: overlayY = canvas.height - overlayHeight; break;
   }
 
-  // Fundo e gradiente
+  // Desenho da faixa e gradiente
   ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
   ctx.fillRect(0, overlayY, canvas.width, overlayHeight);
 
@@ -1467,35 +1494,64 @@ function adicionarTextoEleganteNoCanvas(ctx, canvas) {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, overlayY, canvas.width, overlayHeight);
 
-  // Texto versículo
-  ctx.fillStyle = 'white';
-  ctx.shadowColor = 'rgba(0,0,0,0.8)';
+  // Texto centralizado e baseline no topo (evita corte embaixo)
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+
+  // Sombra
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
   ctx.shadowBlur = 4;
   ctx.shadowOffsetX = 2;
   ctx.shadowOffsetY = 2;
 
-  const yInicial = overlayY + (overlayHeight - (linhas.length * alturaLinha) - tamanhoFonte * 0.8) / 2 + alturaLinha / 2;
-  linhas.forEach((linha, i) => {
-    ctx.fillText(linha, canvas.width / 2, yInicial + i * alturaLinha);
-  });
+  // Texto do versículo
+  ctx.font = `bold ${tamanhoFonte}px 'Segoe UI', Arial, sans-serif`;
+  ctx.fillStyle = 'white';
 
-  // Referência um pouco maior
-  ctx.font = `italic ${Math.round(tamanhoFonte * 0.75)}px 'Georgia', serif`;
+  const startY = overlayY + paddingY;
+  const centerX = canvas.width / 2;
+
+  for (let i = 0; i < linhas.length; i++) {
+    const y = startY + i * alturaLinha;
+    ctx.fillText(linhas[i], centerX, y);
+  }
+
+  // Referência
+  ctx.font = `italic ${refFont}px 'Georgia', serif`;
   ctx.fillStyle = '#FFD700';
-  ctx.shadowColor = 'rgba(0,0,0,0.9)';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
   ctx.shadowBlur = 3;
 
-  const yRef = yInicial + (linhas.length * alturaLinha) + Math.round(tamanhoFonte * 0.3);
-  ctx.fillText(`— ${versiculoAtual.referencia}`, canvas.width / 2, yRef);
+  const yRef = startY + linhas.length * alturaLinha + espacamentoRef;
+  ctx.fillText(`— ${versiculoAtual.referencia}`, centerX, yRef);
+
+  // Logs (opcional)
+  if (CONFIG?.DEBUG) {
+    console.groupCollapsed('🔠 Texto escalonado dinamicamente');
+    console.table({
+      'fonteTexto(px)': tamanhoFonte,
+      'fonteRef(px)': refFont,
+      'linhas': linhas.length,
+      'alturaLinha(px)': alturaLinha,
+      'overlayHeight(px)': overlayHeight,
+      'overlayY(px)': Math.round(overlayY),
+      'canvas': `${canvas.width}x${canvas.height}`,
+      'posicao': posicao
+    });
+    const bottomFaixa = Math.round(overlayY + overlayHeight);
+    const bottomRef = Math.round(yRef + refFont);
+    if (bottomRef > bottomFaixa) {
+      console.warn(`⚠️ Referência tocou a borda: refBottom=${bottomRef} > faixaBottom=${bottomFaixa}`);
+    }
+    console.groupEnd();
+  }
 
   // Limpa sombra
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur = 0;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 0;
-  console.log('📖 Versículo: Altura ajustada automaticamente', );
 }
-
 // Wrapper para compatibilidade
 async function exibirImagem(blob) {
     return exibirImagemComTexto(blob);
