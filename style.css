@@ -666,3 +666,28 @@ footer {
     25% { transform: translateX(-5px); }
     75% { transform: translateX(5px); }
 }
+
+/* Esconde todos os controles que não sejam o Tema */
+#gerarVersiculo,
+#posicaoTexto,
+#qualidadeImagem,
+#baixarImagem,
+#copiarTexto,
+#compartilhar,
+.compartilhar-section,
+.botoes-acoes,
+.btns-acoes,
+.toolbar .grupo:not(.grupo-tema) {
+  display: none !important;
+}
+
+/* Centraliza o bloco do Tema (ajuste o seletor conforme seu layout) */
+#temaEscolhido, label[for="temaEscolhido"] {
+  display: inline-block;
+}
+.topbar, .toolbar, .menu-superior {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
