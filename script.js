@@ -855,6 +855,81 @@ async function verificarChaveAPI() {
 // INÍCIO PARTE 6: FUNÇÕES DE GERAÇÃO DE PROMPTS E ESTILOS
 // ============================================================================
 
+// Remove acentos e normaliza
+function norm(str) {
+  return (str || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+// Dicionário básico PT -> EN (amplie conforme necessário)
+const DIC_PT_EN = {
+  'pastor':'shepherd','ovelha':'sheep','ovelhas':'sheep','rebanho':'flock','cajado':'staff',
+  'vale':'valley','sombra':'shadow','morte':'death','aguas':'waters','águas':'waters','rio':'river',
+  'luz':'divine light','raios':'rays','rocha':'rock','fortaleza':'fortress','escudo':'shield',
+  'paz':'peace','pomba':'dove','oliva':'olive branch','oliva':'olive branch',
+  'amor':'love','graca':'grace','graça':'grace','misericordia':'mercy','justica':'justice','justiça':'justice',
+  'fe':'faith','oracao':'prayer','oração':'prayer','sabedoria':'wisdom','leao':'lion','leão':'lion',
+  'ceu':'heaven','céu':'heaven','nuvens':'clouds','trono':'throne','templo':'temple','caminho':'path',
+  'mar':'sea','montanha':'mountain','montanhas':'mountains','deserto':'desert','fogo':'fire','cruz':'cross'
+};
+
+// Mapeia gatilhos do texto para símbolos visuais (amplie conforme quiser)
+const SIMBOLOS_BIBLICOS = [
+  { gatilhos:['pastor','ovelha','rebanho','cajado'], visuais:['shepherd with flock of sheep','wooden staff','green pastures'] },
+  { gatilhos:['vale','sombra','morte'], visuais:['valley of the shadow','misty valley','soft god rays'] },
+  { gatilhos:['aguas','rio','aguas tranquilas','águas'], visuais:['still waters','gentle river','calm reflection'] },
+  { gatilhos:['paz','pomba','oliva'], visuais:['white dove','olive branch','serene sky'] },
+  { gatilhos:['rocha','fortaleza','escudo'], visuais:['massive rock','ancient fortress','bronze shield'] },
+  { gatilhos:['luz','raios'], visuais:['divine light','heavenly golden rays'] },
+  { gatilhos:['leao','forca','força'], visuais:['lion symbol of strength'] },
+  { gatilhos:['amor','graca','graça','misericordia','misericórdia'], visuais:['warm embrace','soft golden ambiance'] },
+  { gatilhos:['sabedoria'], visuais:['ancient scrolls','open book','oil lamp'] },
+  { gatilhos:['fe','fé','oracao','oração'], visuais:['praying hands','kneeling figure','cathedral light'] },
+];
+
+// Humor/ambiente por tema
+const MOODS_TEMA = {
+  esperanca: 'hopeful mood, sunrise colors, uplifting atmosphere',
+  fe: 'reverent atmosphere, sacred mood, soft ethereal glow',
+  amor: 'warm light, compassionate scene, gentle touch',
+  paz: 'serene landscape, calm waters, tranquil sky',
+  forca: 'powerful composition, monumental scale, dramatic lighting',
+  protecao: 'secure refuge, surrounding light, protective presence',
+  sabedoria: 'ancient wisdom mood, scholarly ambiance'
+};
+
+// Extrai palavras-chave PT (melhor que a atual)
+function extrairTermosPT(texto, max = 8) {
+  const stop = new Set(['o','a','os','as','de','da','do','das','dos','e','que','para','com','em','por','um','uma','no','na','nos','nas','ao','à','às','se','sua','seu','são','tem','não','mais']);
+  return norm(texto)
+    .replace(/[.,;:!?()"“”\-]/g, ' ')
+    .split(/\s+/)
+    .filter(t => t.length > 2 && !stop.has(t))
+    .slice(0, max);
+}
+
+// Traduz termos PT -> EN de forma simples
+function traduzirTermosEN(termosPT) {
+  return termosPT.map(t => DIC_PT_EN[t] || t);
+}
+
+// Puxa símbolos visuais com base nos gatilhos presentes no texto
+function extrairSimbolosVisuais(texto) {
+  const tx = norm(texto);
+  const visuais = new Set();
+  for (const grupo of SIMBOLOS_BIBLICOS) {
+    if (grupo.gatilhos.some(g => tx.includes(g))) {
+      grupo.visuais.forEach(v => visuais.add(v));
+    }
+  }
+  return Array.from(visuais);
+}
+
+// Envolve itens críticos com peso (Stable Diffusion-style)
+function pesar(itens, peso = 1.2) {
+  return itens.map(i => `(${i}:${peso})`);
+}
+
 // Escolher estilo aleatório com pesos
 function escolherEstiloAleatorio() {
     const estilos = [
@@ -878,57 +953,81 @@ function escolherEstiloAleatorio() {
 
 // Gerar prompt estilizado com elementos históricos
 function gerarPromptEstilizado(promptBase) {
-    const estiloEscolhido = escolherEstiloAleatorio();
-    const config = estilosArtisticos[estiloEscolhido];
-    
-    const elementos = elementosHistoricos[estiloEscolhido];
-    const elementoAleatorio = elementos[Math.floor(Math.random() * elementos.length)];
-    
-    const artistasRef = config.artistas.slice(0, 2).join(" and ");
-    
-    const promptFinal = [
-        `masterpiece, ${config.nome.toLowerCase()} painting style`,
-        promptBase,
-        elementoAleatorio,
-        ...config.termosPrompt,
-        `by ${artistasRef}`,
-        "museum quality restoration",
-        "canvas texture visible",
-        "aged varnish effect",
-        "authentic historical artwork",
-        "no modern elements"
-    ].join(", ");
-    
-    console.log(`🎨 ESTILO: ${config.nome} (${config.periodo})`);
-    console.log(`🖌️ ARTISTAS: ${artistasRef}`);
-    console.log(`📝 ELEMENTO: ${elementoAleatorio}`);
-    console.log(`💡 PROMPT: ${promptFinal.substring(0, 150)}...`);
-    
-    return {
-        prompt: promptFinal,
-        negative_prompt: config.termosNegativos.join(", "),
-        estilo: estiloEscolhido
-    };
+  const estiloEscolhido = escolherEstiloAleatorio();
+  const config = estilosArtisticos[estiloEscolhido];
+
+  // Evitar duplicatas no "by ..."
+  const artistasRef = Array.from(new Set(config.artistas.slice(0, 2))).join(' and ');
+
+  const elementos = elementosHistoricos[estiloEscolhido] || [];
+  const elementoAleatorio = elementos.length ? elementos[Math.floor(Math.random() * elementos.length)] : '';
+
+  const promptFinal = [
+    `${config.nome.toLowerCase()} painting style, museum quality`,
+    promptBase,
+    elementoAleatorio,
+    ...config.termosPrompt,
+    `by ${artistasRef}`,
+    'oil on canvas, rich texture, golden tones'
+  ].filter(Boolean).join(', ');
+
+  const negative = [
+    'blurry, low quality, watermark, text, signature, logo, frame, border',
+    'modern clothing, contemporary objects, photorealistic typography',
+    'bad anatomy, deformed, extra fingers, extra limbs, disfigured, cropped',
+    config.termosNegativos?.join(', ') || ''
+  ].join(', ');
+
+  if (CONFIG.DEBUG) {
+    console.groupCollapsed('🎨 Prompt estilizado');
+    console.log('Estilo:', estiloEscolhido, '| Artistas:', artistasRef);
+    console.log('Elemento:', elementoAleatorio);
+    console.log('Prompt final:', promptFinal);
+    console.log('Negative:', negative);
+    console.groupEnd();
+  }
+
+  return {
+    prompt: promptFinal,
+    negative_prompt: negative,
+    estilo: estiloEscolhido
+  };
 }
 
 // Criar prompt baseado no versículo e tema
 function criarPromptBase(versiculo, tema) {
-    const palavrasChave = extrairPalavrasChave(versiculo.texto);
-    
-    const temasVisuais = {
-        esperanca: "hopeful scene, bright future, sunrise, ascending birds",
-        fe: "faith symbols, divine light, praying hands, sacred atmosphere",
-        amor: "warm embrace, hearts, compassionate scene, gentle touch",
-        sabedoria: "ancient books, wise owl, library setting, knowledge symbols",
-        paz: "calm waters, dove, olive branch, serene landscape",
-        forca: "mighty mountains, lion, strong oak tree, fortress",
-        gratidao: "harvest scene, thanksgiving, abundant fruits, blessing hands",
-        oracao: "kneeling figure, cathedral, candlelight, spiritual moment"
-    };
-    
-    const elementosTema = temasVisuais[tema] || "spiritual scene";
-    
-    return `beautiful artwork, divine light, golden rays, heavenly atmosphere, ${elementosTema}, inspired by "${palavrasChave}"`;
+  const termosPT = extrairTermosPT(versiculo.texto, 10);
+  const termosEN = traduzirTermosEN(termosPT);
+  const simbolos = extrairSimbolosVisuais(versiculo.texto);
+
+  // Elementos principais com peso
+  const simbolosPesados = pesar(simbolos.slice(0, 5), 1.25);
+  const keywordsPesados = pesar(termosEN.slice(0, 6), 1.15);
+
+  const mood = MOODS_TEMA[tema] || 'spiritual scene, reverent mood';
+  const estrutura = [
+    'highly detailed, biblical artwork, masterpiece',
+    mood,
+    'natural lighting, volumetric light, cinematic composition',
+    ...simbolosPesados,
+    'supporting details:',
+    ...keywordsPesados
+  ].filter(Boolean);
+
+  const prompt = estrutura.join(', ');
+  
+  if (CONFIG.DEBUG) {
+    console.groupCollapsed('🔎 Alinhamento com versículo');
+    console.log('Ref:', versiculo.referencia);
+    console.log('Tema:', tema);
+    console.log('Termos PT:', termosPT.join(', '));
+    console.log('Termos EN:', termosEN.join(', '));
+    console.log('Símbolos:', simbolos.join(', '));
+    console.log('Prompt base:', prompt);
+    console.groupEnd();
+  }
+
+  return prompt;
 }
 
 // Extrair palavras-chave do versículo
