@@ -1,86 +1,3 @@
-// Adicione esta função para testar quais modelos estão online
-async function testarModelosHF() {
-    console.log('🧪 INICIANDO TESTE DE MODELOS HUGGING FACE...');
-    const chave = getAPIKey();
-    
-    if (!chave) {
-        console.error('❌ Nenhuma chave API configurada');
-        return;
-    }
-    
-    const resultados = [];
-    const prompt = "beautiful landscape, high quality";
-    
-    for (const modelo of modelosHFPrioritarios) {
-        console.log(`📡 Testando ${modelo.nome}...`);
-        
-        try {
-            const response = await fetch(
-                `https://api-inference.huggingface.co/models/${modelo.url}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${chave}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        inputs: prompt,
-                        parameters: modelo.parametros_customizados
-                    })
-                }
-            );
-            
-            if (response.ok) {
-                console.log(`✅ ${modelo.nome} - FUNCIONANDO`);
-                resultados.push({
-                    nome: modelo.nome,
-                    url: modelo.url,
-                    status: 'OK',
-                    categoria: modelo.categoria
-                });
-            } else {
-                console.log(`❌ ${modelo.nome} - Status ${response.status}`);
-                resultados.push({
-                    nome: modelo.nome,
-                    url: modelo.url,
-                    status: `Erro ${response.status}`,
-                    categoria: modelo.categoria
-                });
-            }
-            
-            // Pequena pausa entre testes
-            await new Promise(r => setTimeout(r, 1000));
-            
-        } catch (error) {
-            console.log(`❌ ${modelo.nome} - ${error.message}`);
-            resultados.push({
-                nome: modelo.nome,
-                url: modelo.url,
-                status: 'Erro',
-                categoria: modelo.categoria
-            });
-        }
-    }
-    
-    // Mostrar relatório
-    console.table(resultados);
-    
-    const funcionando = resultados.filter(r => r.status === 'OK');
-    console.log(`📊 RESULTADO: ${funcionando.length}/${modelosHFPrioritarios.length} modelos funcionando`);
-    
-    return funcionando;
-}
-
-// Adicionar ao debugFunctions
-window.debugFunctions.testarModelos = testarModelosHF;
-window.debugFunctions.listarModelos = () => {
-    console.table(modelosHFPrioritarios.map(m => ({
-        Nome: m.nome,
-        Categoria: m.categoria,
-        Confiabilidade: m.confiabilidade,
-        URL: m.url
-    })));
-};
 
 // ============================================================================
 // INÍCIO PARTE 1: CONFIGURAÇÕES GLOBAIS E CONSTANTES
@@ -1175,6 +1092,150 @@ async function tentarGerarImagemIA(promptBase, tema) {
 // ============================================================================
 // FIM PARTE 7: FUNÇÕES DE CHAMADA DE API
 // ============================================================================
+
+
+
+// ============================================================================
+// INÍCIO: SISTEMA DE TESTE DE MODELOS
+// ============================================================================
+
+// Função para testar quais modelos estão online
+async function testarModelosHF() {
+    console.log('🧪 INICIANDO TESTE DE MODELOS HUGGING FACE...');
+    const chave = getAPIKey();
+    
+    if (!chave) {
+        console.error('❌ Nenhuma chave API configurada');
+        return;
+    }
+    
+    const resultados = [];
+    const prompt = "beautiful landscape, high quality";
+    
+    for (const modelo of modelosHFPrioritarios) {
+        console.log(`📡 Testando ${modelo.nome}...`);
+        
+        try {
+            const response = await fetch(
+                `https://api-inference.huggingface.co/models/${modelo.url}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${chave}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        inputs: prompt,
+                        parameters: modelo.parametros_customizados
+                    })
+                }
+            );
+            
+            if (response.ok) {
+                console.log(`✅ ${modelo.nome} - FUNCIONANDO`);
+                resultados.push({
+                    nome: modelo.nome,
+                    url: modelo.url,
+                    status: 'OK',
+                    categoria: modelo.categoria
+                });
+            } else {
+                console.log(`❌ ${modelo.nome} - Status ${response.status}`);
+                resultados.push({
+                    nome: modelo.nome,
+                    url: modelo.url,
+                    status: `Erro ${response.status}`,
+                    categoria: modelo.categoria
+                });
+            }
+            
+            // Pequena pausa entre testes
+            await new Promise(r => setTimeout(r, 1000));
+            
+        } catch (error) {
+            console.log(`❌ ${modelo.nome} - ${error.message}`);
+            resultados.push({
+                nome: modelo.nome,
+                url: modelo.url,
+                status: 'Erro',
+                categoria: modelo.categoria
+            });
+        }
+    }
+    
+    // Mostrar relatório
+    console.table(resultados);
+    
+    const funcionando = resultados.filter(r => r.status === 'OK');
+    console.log(`📊 RESULTADO: ${funcionando.length}/${modelosHFPrioritarios.length} modelos funcionando`);
+    
+    // Salvar modelos funcionais no localStorage
+    if (funcionando.length > 0) {
+        localStorage.setItem('modelos_funcionais', JSON.stringify(funcionando));
+        console.log('💾 Modelos funcionais salvos no cache');
+    }
+    
+    return funcionando;
+}
+
+// Função para obter apenas modelos que funcionaram no último teste
+function obterModelosFuncionais() {
+    const cached = localStorage.getItem('modelos_funcionais');
+    if (cached) {
+        const modelos = JSON.parse(cached);
+        console.log(`📦 ${modelos.length} modelos funcionais em cache`);
+        return modelos.map(m => m.url);
+    }
+    return null;
+}
+
+// Função auxiliar de seleção inteligente de modelos
+function selecionarModeloPorEstilo(estilo, categoria = null) {
+    let modelosFiltrados = modelosHFPrioritarios;
+    
+    // Priorizar modelos que sabemos que funcionam
+    const modelosFuncionais = obterModelosFuncionais();
+    if (modelosFuncionais) {
+        modelosFiltrados = modelosFiltrados.filter(m => 
+            modelosFuncionais.includes(m.url)
+        );
+        console.log(`🎯 Usando apenas ${modelosFiltrados.length} modelos testados`);
+    }
+    
+    // Filtrar por categoria se especificada
+    if (categoria) {
+        modelosFiltrados = modelosFiltrados.filter(m => m.categoria === categoria);
+    }
+    
+    // Para estilo barroco, priorizar modelos artísticos e clássicos
+    if (estilo === 'BARROCO') {
+        const categoriasPrioritarias = ['artistico', 'classico', 'base'];
+        modelosFiltrados = modelosFiltrados.filter(m => 
+            categoriasPrioritarias.includes(m.categoria)
+        );
+    }
+    
+    // Para estilo renascentista, priorizar modelos realistas
+    if (estilo === 'RENASCENTISTA') {
+        const categoriasPrioritarias = ['fotorealista', 'artistico', 'base'];
+        modelosFiltrados = modelosFiltrados.filter(m => 
+            categoriasPrioritarias.includes(m.categoria)
+        );
+    }
+    
+    // Ordenar por confiabilidade
+    modelosFiltrados.sort((a, b) => b.confiabilidade - a.confiabilidade);
+    
+    // Retornar top 5 modelos
+    return modelosFiltrados.slice(0, 5);
+}
+
+// ============================================================================
+// FIM: SISTEMA DE TESTE DE MODELOS
+// ============================================================================
+
+
+
 
 // ============================================================================
 // INÍCIO PARTE 8: SISTEMA DE CANVAS E EXIBIÇÃO DE IMAGEM
