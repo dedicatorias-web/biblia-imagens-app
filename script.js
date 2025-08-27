@@ -1665,41 +1665,59 @@ function atualizarInterface() {
 // INÍCIO PARTE 10: CARREGAMENTO DE VERSÍCULOS
 // ============================================================================
 
-// Carregar versículos do arquivo JSON
-async function carregarVersiculos() {
-    console.log('📚 Carregando versículos...');
-    
-    try {
-        const response = await fetch('versiculos.json');
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+// Normaliza qualquer formato em um array [{texto, referencia, tema}]
+function normalizarVersiculos(data) {
+  // Se vier como { versiculos: [...] }
+  if (Array.isArray(data?.versiculos)) return data.versiculos;
+
+  // Se já for um array na raiz
+  if (Array.isArray(data)) return data;
+
+  // Se vier agrupado por tema: { "esperanca": [...], "amor": [...] }
+  if (data && typeof data === 'object') {
+    const lista = [];
+    for (const [tema, arr] of Object.entries(data)) {
+      if (!Array.isArray(arr)) continue;
+      for (const item of arr) {
+        if (item && item.texto && item.referencia) {
+          lista.push({ texto: item.texto, referencia: item.referencia, tema });
         }
-        
-        const data = await response.json();
-        versiculos = data.versiculos || data;
-        
-        console.log(`✅ ${versiculos.length} versículos carregados`);
-        
-        const temas = [...new Set(versiculos.map(v => v.tema))];
-        console.log(`📚 Temas disponíveis: ${temas.join(', ')}`);
-        
-        popularTemas(temas);
-        
-        if (versiculos.length > 0) {
-            await gerarNovoVersiculo();
-        }
-        
-    } catch (error) {
-        console.error('❌ Erro ao carregar versículos:', error);
-        
-        versiculos = obterVersiculosFallback();
-        console.log('📚 Usando versículos de fallback');
-        
-        await gerarNovoVersiculo();
+      }
     }
+    return lista;
+  }
+
+  return [];
 }
 
+// Substitua sua carregarVersiculos por esta
+async function carregarVersiculos() {
+  console.log('📚 Carregando versículos...');
+  try {
+    const response = await fetch('versiculos.json');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const data = await response.json();
+    versiculos = normalizarVersiculos(data);
+
+    const total = Array.isArray(versiculos) ? versiculos.length : 0;
+    console.log(`✅ ${total} versículos carregados`);
+
+    if (total === 0) throw new Error('Formato inválido ou vazio');
+
+    const temas = [...new Set(versiculos.map(v => v.tema).filter(Boolean))];
+    popularTemas(temas);
+
+    await gerarNovoVersiculo();
+  } catch (error) {
+    console.error('❌ Erro ao carregar versículos:', error);
+    versiculos = obterVersiculosFallback();
+    console.log('📚 Usando versículos de fallback');
+    const temasFallback = [...new Set(versiculos.map(v => v.tema).filter(Boolean))];
+    popularTemas(temasFallback);
+    await gerarNovoVersiculo();
+  }
+}
 // Popular dropdown de temas
 function popularTemas(temas) {
     const selectTema = document.getElementById('temaEscolhido');
