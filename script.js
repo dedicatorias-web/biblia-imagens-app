@@ -1414,99 +1414,85 @@ async function exibirImagemComTexto(blob) {
 
 // Adicionar texto elegante no canvas
 function adicionarTextoEleganteNoCanvas(ctx, canvas) {
-    if (!versiculoAtual) return;
-    
-    const posicao = document.getElementById('posicaoTexto')?.value || 'bottom';
-    const qualidade = document.getElementById('qualidadeImagem')?.value || 'alta';
-    
-    console.log(`📝 Adicionando texto: posição=${posicao}, qualidade=${qualidade}`);
-    
-    const overlayHeight = 150;
-    let overlayY;
-    
-    switch(posicao) {
-        case 'top':
-            overlayY = 0;
-            break;
-        case 'center':
-            overlayY = (canvas.height - overlayHeight) / 2;
-            break;
-        case 'bottom':
-        default:
-            overlayY = canvas.height - overlayHeight;
+  if (!versiculoAtual) return;
+
+  const posicao = document.getElementById('posicaoTexto')?.value || 'bottom';
+  const qualidade = document.getElementById('qualidadeImagem')?.value || 'alta';
+
+  // Escala conforme a largura da imagem (ex.: 1024px -> ~44px)
+  const tamanhoFonte = Math.round(canvas.width * (qualidade === 'alta' ? 0.043 : 0.035));
+  const maxWidth = canvas.width - 80;
+
+  // Quebra de linhas
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `bold ${tamanhoFonte}px 'Segoe UI', Arial, sans-serif`;
+
+  const palavras = versiculoAtual.texto.split(' ');
+  const linhas = [];
+  let linhaAtual = '';
+
+  for (const palavra of palavras) {
+    const teste = linhaAtual + palavra + ' ';
+    if (ctx.measureText(teste).width > maxWidth && linhaAtual) {
+      linhas.push(linhaAtual.trim());
+      linhaAtual = palavra + ' ';
+    } else {
+      linhaAtual = teste;
     }
-    
-    // Desenhar fundo semi-transparente
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-    ctx.fillRect(0, overlayY, canvas.width, overlayHeight);
-    
-    // Adicionar gradiente
-    const gradient = ctx.createLinearGradient(0, overlayY, 0, overlayY + overlayHeight);
-    gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    gradient.addColorStop(0.2, 'rgba(0, 0, 0, 0.4)');
-    gradient.addColorStop(0.8, 'rgba(0, 0, 0, 0.4)');
-    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, overlayY, canvas.width, overlayHeight);
-    
-    // Configurar texto
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    
-    const maxWidth = canvas.width - 80;
-    const palavras = versiculoAtual.texto.split(' ');
-    const linhas = [];
-    let linhaAtual = '';
-    
-    const tamanhoFonte = qualidade === 'alta' ? 32 : 24;
-    ctx.font = `bold ${tamanhoFonte}px 'Segoe UI', Arial, sans-serif`;
-    
-    // Criar linhas
-    for (const palavra of palavras) {
-        const teste = linhaAtual + palavra + ' ';
-        const medida = ctx.measureText(teste);
-        
-        if (medida.width > maxWidth && linhaAtual !== '') {
-            linhas.push(linhaAtual.trim());
-            linhaAtual = palavra + ' ';
-        } else {
-            linhaAtual = teste;
-        }
-    }
-    linhas.push(linhaAtual.trim());
-    
-    const alturaLinha = tamanhoFonte * 1.2;
-    const alturaTotal = linhas.length * alturaLinha + 30;
-    const yInicial = overlayY + (overlayHeight - alturaTotal) / 2 + alturaLinha / 2;
-    
-    // Desenhar texto com sombra
-    ctx.fillStyle = 'white';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-    ctx.shadowBlur = 4;
-    ctx.shadowOffsetX = 2;
-    ctx.shadowOffsetY = 2;
-    
-    linhas.forEach((linha, index) => {
-        const y = yInicial + (index * alturaLinha);
-        ctx.fillText(linha, canvas.width / 2, y);
-    });
-    
-    // Adicionar referência
-    ctx.font = `italic ${tamanhoFonte * 0.6}px 'Georgia', serif`;
-    ctx.fillStyle = '#FFD700';
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-    ctx.shadowBlur = 3;
-    
-    const yReferencia = yInicial + (linhas.length * alturaLinha) + 10;
-    ctx.fillText(`— ${versiculoAtual.referencia}`, canvas.width / 2, yReferencia);
-    
-    // Limpar sombra
-    ctx.shadowColor = 'transparent';
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
-    
-    console.log(`✅ Texto adicionado: ${linhas.length} linhas`);
+  }
+  if (linhaAtual) linhas.push(linhaAtual.trim());
+
+  const alturaLinha = Math.round(tamanhoFonte * 1.2);
+  // Faixa dinâmica (mínimo 150)
+  const overlayHeight = Math.max(150, linhas.length * alturaLinha + tamanhoFonte * 1.2);
+
+  let overlayY;
+  switch (posicao) {
+    case 'top': overlayY = 0; break;
+    case 'center': overlayY = (canvas.height - overlayHeight) / 2; break;
+    case 'bottom':
+    default: overlayY = canvas.height - overlayHeight; break;
+  }
+
+  // Fundo e gradiente
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+  ctx.fillRect(0, overlayY, canvas.width, overlayHeight);
+
+  const gradient = ctx.createLinearGradient(0, overlayY, 0, overlayY + overlayHeight);
+  gradient.addColorStop(0, 'rgba(0,0,0,0)');
+  gradient.addColorStop(0.2, 'rgba(0,0,0,0.4)');
+  gradient.addColorStop(0.8, 'rgba(0,0,0,0.4)');
+  gradient.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, overlayY, canvas.width, overlayHeight);
+
+  // Texto versículo
+  ctx.fillStyle = 'white';
+  ctx.shadowColor = 'rgba(0,0,0,0.8)';
+  ctx.shadowBlur = 4;
+  ctx.shadowOffsetX = 2;
+  ctx.shadowOffsetY = 2;
+
+  const yInicial = overlayY + (overlayHeight - (linhas.length * alturaLinha) - tamanhoFonte * 0.8) / 2 + alturaLinha / 2;
+  linhas.forEach((linha, i) => {
+    ctx.fillText(linha, canvas.width / 2, yInicial + i * alturaLinha);
+  });
+
+  // Referência um pouco maior
+  ctx.font = `italic ${Math.round(tamanhoFonte * 0.75)}px 'Georgia', serif`;
+  ctx.fillStyle = '#FFD700';
+  ctx.shadowColor = 'rgba(0,0,0,0.9)';
+  ctx.shadowBlur = 3;
+
+  const yRef = yInicial + (linhas.length * alturaLinha) + Math.round(tamanhoFonte * 0.3);
+  ctx.fillText(`— ${versiculoAtual.referencia}`, canvas.width / 2, yRef);
+
+  // Limpa sombra
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 0;
 }
 
 // Wrapper para compatibilidade
