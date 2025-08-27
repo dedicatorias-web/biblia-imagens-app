@@ -1,3 +1,87 @@
+// Adicione esta função para testar quais modelos estão online
+async function testarModelosHF() {
+    console.log('🧪 INICIANDO TESTE DE MODELOS HUGGING FACE...');
+    const chave = getAPIKey();
+    
+    if (!chave) {
+        console.error('❌ Nenhuma chave API configurada');
+        return;
+    }
+    
+    const resultados = [];
+    const prompt = "beautiful landscape, high quality";
+    
+    for (const modelo of modelosHFPrioritarios) {
+        console.log(`📡 Testando ${modelo.nome}...`);
+        
+        try {
+            const response = await fetch(
+                `https://api-inference.huggingface.co/models/${modelo.url}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${chave}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        inputs: prompt,
+                        parameters: modelo.parametros_customizados
+                    })
+                }
+            );
+            
+            if (response.ok) {
+                console.log(`✅ ${modelo.nome} - FUNCIONANDO`);
+                resultados.push({
+                    nome: modelo.nome,
+                    url: modelo.url,
+                    status: 'OK',
+                    categoria: modelo.categoria
+                });
+            } else {
+                console.log(`❌ ${modelo.nome} - Status ${response.status}`);
+                resultados.push({
+                    nome: modelo.nome,
+                    url: modelo.url,
+                    status: `Erro ${response.status}`,
+                    categoria: modelo.categoria
+                });
+            }
+            
+            // Pequena pausa entre testes
+            await new Promise(r => setTimeout(r, 1000));
+            
+        } catch (error) {
+            console.log(`❌ ${modelo.nome} - ${error.message}`);
+            resultados.push({
+                nome: modelo.nome,
+                url: modelo.url,
+                status: 'Erro',
+                categoria: modelo.categoria
+            });
+        }
+    }
+    
+    // Mostrar relatório
+    console.table(resultados);
+    
+    const funcionando = resultados.filter(r => r.status === 'OK');
+    console.log(`📊 RESULTADO: ${funcionando.length}/${modelosHFPrioritarios.length} modelos funcionando`);
+    
+    return funcionando;
+}
+
+// Adicionar ao debugFunctions
+window.debugFunctions.testarModelos = testarModelosHF;
+window.debugFunctions.listarModelos = () => {
+    console.table(modelosHFPrioritarios.map(m => ({
+        Nome: m.nome,
+        Categoria: m.categoria,
+        Confiabilidade: m.confiabilidade,
+        URL: m.url
+    })));
+};
+
 // ============================================================================
 // INÍCIO PARTE 1: CONFIGURAÇÕES GLOBAIS E CONSTANTES
 // ============================================================================
@@ -1091,89 +1175,7 @@ async function tentarGerarImagemIA(promptBase, tema) {
 // ============================================================================
 // FIM PARTE 7: FUNÇÕES DE CHAMADA DE API
 // ============================================================================
-// Adicione esta função para testar quais modelos estão online
-async function testarModelosHF() {
-    console.log('🧪 INICIANDO TESTE DE MODELOS HUGGING FACE...');
-    const chave = getAPIKey();
-    
-    if (!chave) {
-        console.error('❌ Nenhuma chave API configurada');
-        return;
-    }
-    
-    const resultados = [];
-    const prompt = "beautiful landscape, high quality";
-    
-    for (const modelo of modelosHFPrioritarios) {
-        console.log(`📡 Testando ${modelo.nome}...`);
-        
-        try {
-            const response = await fetch(
-                `https://api-inference.huggingface.co/models/${modelo.url}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${chave}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        inputs: prompt,
-                        parameters: modelo.parametros_customizados
-                    })
-                }
-            );
-            
-            if (response.ok) {
-                console.log(`✅ ${modelo.nome} - FUNCIONANDO`);
-                resultados.push({
-                    nome: modelo.nome,
-                    url: modelo.url,
-                    status: 'OK',
-                    categoria: modelo.categoria
-                });
-            } else {
-                console.log(`❌ ${modelo.nome} - Status ${response.status}`);
-                resultados.push({
-                    nome: modelo.nome,
-                    url: modelo.url,
-                    status: `Erro ${response.status}`,
-                    categoria: modelo.categoria
-                });
-            }
-            
-            // Pequena pausa entre testes
-            await new Promise(r => setTimeout(r, 1000));
-            
-        } catch (error) {
-            console.log(`❌ ${modelo.nome} - ${error.message}`);
-            resultados.push({
-                nome: modelo.nome,
-                url: modelo.url,
-                status: 'Erro',
-                categoria: modelo.categoria
-            });
-        }
-    }
-    
-    // Mostrar relatório
-    console.table(resultados);
-    
-    const funcionando = resultados.filter(r => r.status === 'OK');
-    console.log(`📊 RESULTADO: ${funcionando.length}/${modelosHFPrioritarios.length} modelos funcionando`);
-    
-    return funcionando;
-}
 
-// Adicionar ao debugFunctions
-window.debugFunctions.testarModelos = testarModelosHF;
-window.debugFunctions.listarModelos = () => {
-    console.table(modelosHFPrioritarios.map(m => ({
-        Nome: m.nome,
-        Categoria: m.categoria,
-        Confiabilidade: m.confiabilidade,
-        URL: m.url
-    })));
-};
 // ============================================================================
 // INÍCIO PARTE 8: SISTEMA DE CANVAS E EXIBIÇÃO DE IMAGEM
 // ============================================================================
@@ -1902,3 +1904,5 @@ console.log('💡 Ver estatísticas: window.debugFunctions.stats()');
 // ============================================================================
 // FIM DO ARQUIVO SCRIPT.JS - VERSÃO COMPLETA 3.2
 // ============================================================================
+
+
