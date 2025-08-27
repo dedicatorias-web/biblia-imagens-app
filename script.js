@@ -39,6 +39,48 @@ let ultimaImagemBlob = null;
 // ============================================================================
 
 // ============================================================================
+// CONFIGURAÇÕES DE ESTILOS E PARÂMETROS (CORREÇÃO DEFINITIVA)
+// ============================================================================
+
+// Parâmetros de estilos artísticos para os modelos
+const parametrosEstilos = {
+    BARROCO: {
+        num_inference_steps: 30,
+        guidance_scale: 8.5,
+        width: 768,
+        height: 768,
+        negative_prompt: "blurry, bad quality, watermark, text, modern, contemporary, abstract"
+    },
+    RENASCENTISTA: {
+        num_inference_steps: 25,
+        guidance_scale: 7.5,
+        width: 768,
+        height: 768,
+        negative_prompt: "cartoon, anime, modern, digital art, 3d render, photography"
+    },
+    DEFAULT: {
+        num_inference_steps: 20,
+        guidance_scale: 7,
+        width: 512,
+        height: 512,
+        negative_prompt: "blurry, bad quality, watermark, text"
+    }
+};
+
+// Sistema de prioridade de APIs
+const CONFIG_APIS = {
+    USAR_HUGGINGFACE: true,  // Mudar para false para desabilitar HF
+    TIMEOUT_HF: 15000,       // Timeout de 15s para cada modelo HF
+    MAX_TENTATIVAS_HF: 3,    // Máximo de modelos HF para testar
+    PREFERIR_POLLINATIONS: false  // Se true, vai direto para Pollinations
+};
+
+// ============================================================================
+// FIM DAS CONFIGURAÇÕES
+// ============================================================================
+
+
+// ============================================================================
 // INÍCIO PARTE 2: DEFINIÇÕES DE ESTILOS ARTÍSTICOS
 // ============================================================================
 
@@ -990,103 +1032,183 @@ async function chamarAPIHuggingFaceSeguro(url, prompt, parametros) {
 
 // Função principal de tentativa de geração
 // Função principal com teste em massa de modelos
+// Função principal de geração (VERSÃO CORRIGIDA E OTIMIZADA)
 async function tentarGerarImagemIA(promptBase, tema) {
     const startTime = Date.now();
-    console.log('🚀 Iniciando geração com 30+ modelos disponíveis...');
+    console.log('🚀 Iniciando geração inteligente...');
     mostrarProgresso('Preparando geração...', 5);
     
     const { prompt, negative_prompt, estilo } = gerarPromptEstilizado(promptBase);
     
-    const chave = getAPIKey();
+    // Obter parâmetros do estilo ou usar default
+    const estiloParams = parametrosEstilos[estilo] || parametrosEstilos.DEFAULT;
     
-    if (chave) {
-        console.log(`🤖 Testando modelos Hugging Face (${modelosHFPrioritarios.length} disponíveis)...`);
+    // Verificar configuração de APIs
+    const preferirPollinations = CONFIG_APIS.PREFERIR_POLLINATIONS || 
+                                localStorage.getItem('preferir_pollinations') === 'true';
+    
+    if (preferirPollinations) {
+        console.log('🎯 Configurado para usar Pollinations diretamente');
+    }
+    
+    // TENTATIVA 1: Hugging Face (se habilitado e não preferir Pollinations)
+    if (CONFIG_APIS.USAR_HUGGINGFACE && !preferirPollinations) {
+        const chave = getAPIKey();
         
-        // Selecionar modelos baseados no estilo
-        const modelosSelecionados = selecionarModeloPorEstilo(estilo);
-        console.log(`📋 ${modelosSelecionados.length} modelos selecionados para estilo ${estilo}`);
-        
-        // Testar modelos em ordem de confiabilidade
-        for (let i = 0; i < modelosSelecionados.length; i++) {
-            const modelo = modelosSelecionados[i];
+        if (chave) {
+            console.log(`🤖 Testando modelos Hugging Face...`);
             
-            try {
-                const progresso = 20 + (i * 15);
-                mostrarProgresso(`🤖 ${modelo.nome} (${modelo.categoria})...`, progresso);
-                console.log(`🔄 Testando ${modelo.nome} [${modelo.categoria}] (${modelo.confiabilidade}/10)`);
+            // Selecionar modelos baseados no estilo
+            const modelosSelecionados = selecionarModeloPorEstilo(estilo);
+            const maxTentativas = Math.min(CONFIG_APIS.MAX_TENTATIVAS_HF, modelosSelecionados.length);
+            
+            for (let i = 0; i < maxTentativas; i++) {
+                const modelo = modelosSelecionados[i];
                 
-                const parametros = {
-                    ...parametrosEstilos[estilo],
-                    negative_prompt: negative_prompt,
-                    ...modelo.parametros_customizados
-                };
-                
-                // Timeout mais curto para testar rapidamente
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Timeout')), 20000)
-                );
-                
-                const apiPromise = chamarAPIHuggingFaceSeguro(modelo.url, prompt, parametros);
-                
-                const blob = await Promise.race([apiPromise, timeoutPromise]);
-                
-                if (blob && blob.size > 5000) {
-                    const tempoTotal = Date.now() - startTime;
-                    console.log(`✅ ${modelo.nome} funcionou em ${formatarTempo(tempoTotal)}!`);
+                try {
+                    const progresso = 20 + (i * 20);
+                    mostrarProgresso(`🤖 ${modelo.nome}...`, progresso);
+                    console.log(`🔄 Testando ${modelo.nome} [${modelo.categoria}]`);
                     
-                    mostrarToast(`🎨 Sucesso: ${modelo.nome} (${modelo.categoria})`, 'success');
+                    // Combinar parâmetros
+                    const parametros = {
+                        ...estiloParams,
+                        ...modelo.parametros_customizados,
+                        negative_prompt: negative_prompt || estiloParams.negative_prompt
+                    };
+                    
+                    // Criar timeout
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), CONFIG_APIS.TIMEOUT_HF);
+                    
+                    try {
+                        const blob = await chamarAPIHuggingFaceComAbort(
+                            modelo.url, 
+                            prompt, 
+                            parametros,
+                            controller.signal
+                        );
+                        
+                        clearTimeout(timeoutId);
+                        
+                        if (blob && blob.size > 5000) {
+                            const tempoTotal = Date.now() - startTime;
+                            console.log(`✅ ${modelo.nome} funcionou em ${formatarTempo(tempoTotal)}!`);
+                            
+                            mostrarToast(`🎨 Sucesso: ${modelo.nome}`, 'success');
+                            
+                            // Salvar preferência de sucesso
+                            localStorage.setItem('ultimo_modelo_sucesso', JSON.stringify({
+                                url: modelo.url,
+                                nome: modelo.nome,
+                                timestamp: Date.now()
+                            }));
+                            
+                            stats.sucessoIA++;
+                            stats.totalGerado++;
+                            
+                            ultimaImagemBlob = blob;
+                            return blob;
+                        }
+                    } catch (error) {
+                        clearTimeout(timeoutId);
+                        throw error;
+                    }
+                    
+                } catch (error) {
+                    console.log(`⚠️ ${modelo.nome}: ${error.message?.substring(0, 50) || 'Erro desconhecido'}`);
+                    
+                    // Se for erro de autorização, desabilitar HF
+                    if (error.message?.includes('401') || error.message?.includes('403')) {
+                        console.log('🔴 Problema de autorização - Pulando para alternativas');
+                        break;
+                    }
+                }
+            }
+        } else {
+            console.log('⚠️ Sem chave API do Hugging Face');
+        }
+    }
+    
+    // TENTATIVA 2: Pollinations AI (Sempre funciona)
+    console.log('🆓 Usando Pollinations AI...');
+    mostrarProgresso('Gerando com Pollinations...', 70);
+    
+    // Tentar diferentes modelos do Pollinations
+    const modelosPollinations = [
+        { nome: 'Flux', modelo: 'flux', width: 1024, height: 1024, enhance: true },
+        { nome: 'Turbo', modelo: 'turbo', width: 512, height: 512, enhance: false }
+    ];
+    
+    for (const config of modelosPollinations) {
+        try {
+            console.log(`🔄 Tentando Pollinations ${config.nome}...`);
+            
+            const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${config.width}&height=${config.height}&model=${config.modelo}&enhance=${config.enhance}&nologo=true&seed=${Math.floor(Math.random() * 1000000)}`;
+            
+            const response = await fetch(url);
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                
+                if (blob.size > 3000) {
+                    const tempoTotal = Date.now() - startTime;
+                    console.log(`✅ Pollinations ${config.nome} funcionou em ${formatarTempo(tempoTotal)}!`);
+                    
+                    mostrarToast(`🎨 Imagem criada: Pollinations ${config.nome}`, 'success');
                     
                     stats.sucessoIA++;
                     stats.totalGerado++;
                     
-                    // Salvar modelo bem-sucedido
-                    localStorage.setItem('ultimo_modelo_sucesso', modelo.url);
-                    
                     ultimaImagemBlob = blob;
                     return blob;
                 }
-                
-            } catch (error) {
-                console.log(`⚠️ ${modelo.nome} falhou: ${error.message.substring(0, 50)}`);
-                stats.falhasIA++;
-                
-                // Continuar para próximo modelo
-                continue;
             }
-        }
-        
-        console.log('⚠️ Todos os modelos HF falharam, tentando alternativas...');
-    }
-    
-    // Fallback para APIs alternativas
-    console.log('🆓 Usando Pollinations AI como fallback...');
-    mostrarProgresso('Gerando com Pollinations...', 80);
-    
-    for (const api of apisAlternativas) {
-        try {
-            const blob = await api.funcao(prompt);
-            
-            if (blob && blob.size > 3000) {
-                const tempoTotal = Date.now() - startTime;
-                console.log(`✅ ${api.nome} funcionou em ${formatarTempo(tempoTotal)}!`);
-                
-                mostrarToast(`🎨 Imagem criada por: ${api.nome}`, 'success');
-                
-                stats.sucessoIA++;
-                stats.totalGerado++;
-                
-                ultimaImagemBlob = blob;
-                return blob;
-            }
-            
         } catch (error) {
-            console.log(`⚠️ ${api.nome} falhou`);
+            console.log(`⚠️ Pollinations ${config.nome} falhou`);
         }
     }
     
-    // Último recurso: Arte Local
-    console.log('🎨 Gerando arte local...');
+    // TENTATIVA 3: Arte Local (Último recurso)
+    console.log('🎨 Gerando arte local como fallback final...');
+    mostrarProgresso('Criando arte local...', 90);
     return await gerarArteLocal(prompt, tema, estilo);
+}
+
+// Função auxiliar para chamada com abort
+async function chamarAPIHuggingFaceComAbort(modelo, prompt, parametros, signal) {
+    const chave = getAPIKey();
+    
+    const response = await fetch(
+        `https://api-inference.huggingface.co/models/${modelo}`,
+        {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${chave}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                inputs: prompt,
+                parameters: parametros,
+                options: { wait_for_model: true }
+            }),
+            signal: signal
+        }
+    );
+    
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`HTTP ${response.status}: ${error}`);
+    }
+    
+    return await response.blob();
+}
+
+// Função auxiliar melhorada para formatar tempo
+function formatarTempo(ms) {
+    if (ms < 1000) return `${ms}ms`;
+    if (ms < 60000) return `${(ms/1000).toFixed(1)}s`;
+    return `${(ms/60000).toFixed(1)}min`;
 }
 
 // ============================================================================
