@@ -1,875 +1,314 @@
+// ============================================================================
+// INÍCIO PARTE 1: CONFIGURAÇÕES GLOBAIS E CONSTANTES
+// ============================================================================
 
-// Adicione temporariamente no script.js para verificar a chave:
-function verificarChaveDetalhada() {
-    const chave = getAPIKey();
-    console.log('🔍 === VERIFICAÇÃO DETALHADA DA CHAVE ===');
-    console.log('📏 Tamanho:', chave?.length);
-    console.log('🔑 Primeiros 10 caracteres:', chave?.substring(0, 10));
-    console.log('✅ Formato hf_:', chave?.startsWith('hf_'));
-    console.log('📅 Possível expiração: Chaves HuggingFace podem expirar');
-    
-    // Teste manual simplificado
-    fetch('https://huggingface.co/api/whoami', {
-        headers: { 'Authorization': `Bearer ${chave}` }
-    })
-    .then(r => r.json())
-    .then(data => console.log('👤 Info da chave:', data))
-    .catch(e => console.log('❌ Chave inválida:', e));
-}
+// Configurações principais
+const CONFIG = {
+    VERSION: '2.0.0',
+    DEBUG: true,
+    API_TIMEOUT: 30000,
+    MAX_RETRIES: 3,
+    DELAY_BETWEEN_ATTEMPTS: 1000
+};
 
-// Execute no console do navegador:
-// verificarChaveDetalhada()
+// URLs das APIs
+const API_URLS = {
+    HUGGING_FACE_BASE: 'https://api-inference.huggingface.co/models/',
+    POLLINATIONS: 'https://image.pollinations.ai/prompt/',
+    PICSUM: 'https://picsum.photos/'
+};
 
+// Estatísticas globais
+let stats = {
+    totalGerado: 0,
+    sucessoIA: 0,
+    falhasIA: 0,
+    tempoMedio: 0
+};
 
-
-// ========== DEBUG TEMPORÁRIO - ADICIONE NO INÍCIO DA tentarGerarImagemIA ==========
-async function tentarGerarImagemIA(prompt, tema) {
-    console.log('🔍 === DIAGNÓSTICO DA CHAVE ===');
-    
-    // 1. Verificar se a variável existe
-    console.log('📋 typeof HUGGING_FACE_API_KEY:', typeof HUGGING_FACE_API_KEY);
-    
-    // 2. Verificar valor (mascarado)
-    if (typeof HUGGING_FACE_API_KEY !== 'undefined') {
-        console.log('🔑 Chave definida:', HUGGING_FACE_API_KEY ? 
-            HUGGING_FACE_API_KEY.substring(0, 5) + '...' : 'VAZIA');
-        console.log('✅ Formato correto:', HUGGING_FACE_API_KEY?.startsWith('hf_'));
-        console.log('📏 Tamanho:', HUGGING_FACE_API_KEY?.length);
-    }
-    
-    // 3. Verificar CONFIG
-    if (typeof window !== 'undefined' && window.CONFIG) {
-        console.log('🌐 CONFIG existe:', !!window.CONFIG);
-        console.log('🔑 CONFIG.HUGGING_FACE_API_KEY:', window.CONFIG.HUGGING_FACE_API_KEY ? 
-            window.CONFIG.HUGGING_FACE_API_KEY.substring(0, 5) + '...' : 'VAZIA');
-    }
-    
-    // 4. Teste direto da API
-    await testarChaveAPI();
-    
-    console.log('🔍 === FIM DO DIAGNÓSTICO ===');
-    
-    // ... resto da função original
-}
-
-// ========== FUNÇÃO DE TESTE DIRETO ==========
-async function testarChaveAPI() {
-    console.log('🧪 Testando chave diretamente...');
-    
-    // Pegar a chave da forma mais direta possível
-    let chave = null;
-    
-    if (typeof HUGGING_FACE_API_KEY !== 'undefined' && HUGGING_FACE_API_KEY) {
-        chave = HUGGING_FACE_API_KEY;
-        console.log('📍 Origem: Variável HUGGING_FACE_API_KEY');
-    } else if (typeof window !== 'undefined' && window.CONFIG?.HUGGING_FACE_API_KEY) {
-        chave = window.CONFIG.HUGGING_FACE_API_KEY;
-        console.log('📍 Origem: window.CONFIG');
-    }
-    
-    if (!chave) {
-        console.log('❌ Nenhuma chave encontrada!');
-        return;
-    }
-    
-    console.log('🔑 Testando chave:', chave.substring(0, 8) + '...');
-    
-    try {
-        const response = await fetch('https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${chave}`
-            },
-            body: JSON.stringify({
-                inputs: "test",
-                parameters: { num_inference_steps: 1 }
-            })
-        });
-        
-        console.log('🌐 Status da resposta:', response.status);
-        console.log('📋 Headers:', Object.fromEntries(response.headers.entries()));
-        
-        if (response.status === 401) {
-            const text = await response.text();
-            console.log('❌ Erro 401 detalhado:', text);
-            
-            // Verificar tipo de erro 401
-            if (text.includes('Invalid username')) {
-                console.log('💡 PROBLEMA: Chave inválida ou corrompida');
-            } else if (text.includes('not authorized')) {
-                console.log('💡 PROBLEMA: Chave sem permissões');
-            } else {
-                console.log('💡 PROBLEMA: Erro de autenticação genérico');
-            }
-        } else if (response.status === 503) {
-            console.log('✅ CHAVE VÁLIDA! Modelo está carregando (503 é normal)');
-        } else if (response.status === 200) {
-            console.log('✅ CHAVE VÁLIDA! Resposta OK');
-        } else {
-            console.log('🤔 Status inesperado:', response.status);
-        }
-        
-    } catch (error) {
-        console.log('💥 Erro na requisição:', error.message);
-    }
-}
-
-
-
-
-
-
-// ========== DEBUG - VERIFICAR ELEMENTOS ==========
-console.log('🔍 INICIANDO DEBUG...');
-
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('📄 DOM carregado, verificando elementos...');
-    
-    // Verificar se elementos existem
-    const elementos = [
-        'temaEscolhido',
-        'versiculoTexto', 
-        'versiculoReferencia',
-        'gerarVersiculo',
-        'canvasImagem'
-    ];
-    
-    elementos.forEach(id => {
-        const elemento = document.getElementById(id);
-        if (elemento) {
-            console.log(`✅ ${id}: ENCONTRADO`);
-        } else {
-            console.error(`❌ ${id}: NÃO ENCONTRADO!`);
-        }
-    });
-    
-    // Verificar se a variável versiculos existe
-    if (typeof versiculos !== 'undefined') {
-        console.log('✅ Variável versiculos: DEFINIDA');
-        console.log('📚 Temas disponíveis:', Object.keys(versiculos));
-    } else {
-        console.error('❌ Variável versiculos: NÃO DEFINIDA!');
-    }
-    
-    // Verificar se versiculoAtual existe
-    console.log('🎯 versiculoAtual:', versiculoAtual);
-});
-
-
-// ========== CONFIGURAÇÕES DA APLICAÇÃO ==========
-let versiculos = {};
+// Variáveis globais do sistema
 let versiculoAtual = null;
-let imagemAtualBlob = null;
+let temaAtual = 'esperanca';
+let versiculos = [];
+let historicoImagens = [];
 
-// ========== MODELOS HUGGING FACE TESTADOS E FUNCIONAIS ==========
-const modelosHuggingFaceFuncionais = {
-    // 🟢 CATEGORIA RÁPIDA (Modelos básicos e rápidos)
-    rapida: [
-        {
-            nome: "SDXL Base 1.0",
-            url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
-            confiabilidade: 10, // ✅ TESTADO E FUNCIONANDO
-            categoria: "rapida",
-            tempo_estimado: "15-30s"
-        },
-        {
-            nome: "SDXL Turbo",
-            url: "https://api-inference.huggingface.co/models/stabilityai/sdxl-turbo",
-            confiabilidade: 9,
-            categoria: "rapida", 
-            tempo_estimado: "10-20s"
-        },
-        {
-            nome: "Stable Diffusion 2.1",
-            url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1",
-            confiabilidade: 8,
-            categoria: "rapida",
-            tempo_estimado: "20-35s"
-        },
-        {
-            nome: "Stable Diffusion 1.5",
-            url: "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5",
-            confiabilidade: 7,
-            categoria: "rapida", 
-            tempo_estimado: "15-30s"
-        },
-        {
-            nome: "Kandinsky 2.2",
-            url: "https://api-inference.huggingface.co/models/kandinsky-community/kandinsky-2-2-decoder",
-            confiabilidade: 6,
-            categoria: "rapida",
-            tempo_estimado: "25-40s"
-        }
+// ============================================================================
+// FIM PARTE 1: CONFIGURAÇÕES GLOBAIS E CONSTANTES
+// ============================================================================
+
+// ============================================================================
+// INÍCIO PARTE 2: DEFINIÇÕES DE ESTILOS ARTÍSTICOS
+// ============================================================================
+
+const estilosArtisticos = {
+    BARROCO: {
+        nome: "Barroco",
+        periodo: "séculos XVII-XVIII",
+        peso: 0.6, // 60% de chance
+        descricao: "Dramaticidade intensa e chiaroscuro",
+        caracteristicas: [
+            "contraste extremo de luz e sombra (chiaroscuro)",
+            "dramaticidade intensa",
+            "movimento dinâmico",
+            "emoções exuberantes",
+            "detalhes ornamentais elaborados",
+            "composições diagonais"
+        ],
+        artistas: ["Caravaggio", "Rembrandt", "Rubens", "Velázquez"],
+        termosPrompt: [
+            "baroque painting style",
+            "dramatic chiaroscuro lighting",
+            "oil on canvas, 17th century",
+            "ornate gilded frame",
+            "religious baroque masterpiece",
+            "by Caravaggio and Rembrandt",
+            "intense emotional expression",
+            "diagonal composition",
+            "rich golden tones",
+            "deep shadows and bright highlights"
+        ],
+        termosNegativos: [
+            "modern", "photorealistic", "abstract", "cartoon", "anime",
+            "flat design", "digital art", "3D render", "contemporary",
+            "minimalist", "geometric", "neon colors", "vector art"
+        ]
+    },
+    RENASCENTISTA: {
+        nome: "Renascentista", 
+        periodo: "séculos XIV-XVI",
+        peso: 0.4, // 40% de chance
+        descricao: "Proporção matemática e harmonia",
+        caracteristicas: [
+            "proporção e simetria matemática",
+            "perspectiva linear perfeita",
+            "equilíbrio harmonioso",
+            "idealização da forma humana",
+            "temas clássicos e bíblicos",
+            "detalhes minuciosos"
+        ],
+        artistas: ["Leonardo da Vinci", "Michelangelo", "Rafael", "Botticelli"],
+        termosPrompt: [
+            "renaissance fresco painting",
+            "perfect linear perspective",
+            "oil on wood panel, 15th century",
+            "golden ratio composition",
+            "by Leonardo da Vinci and Raphael",
+            "sfumato technique",
+            "balanced symmetrical composition",
+            "classical architectural background",
+            "soft natural lighting",
+            "anatomically perfect figures"
+        ],
+        termosNegativos: [
+            "modern", "photorealistic", "abstract", "baroque", "dramatic lighting",
+            "ornate", "exaggerated emotions", "contemporary", "digital art",
+            "asymmetrical", "high contrast", "neon", "minimalist"
+        ]
+    }
+};
+
+// Elementos históricos específicos por estilo
+const elementosHistoricos = {
+    BARROCO: [
+        "anjo barroco com asas dramáticas",
+        "santo com expressão extasiada",
+        "raios de luz celestial intensos", 
+        "vestes douradas com dobras profundas",
+        "cortinas vermelhas pesadas",
+        "nuvens tempestuosas divinas",
+        "querubins em movimento espiral"
     ],
-    
-    // 🟡 CATEGORIA MÉDIA (Qualidade balanceada)
-    media: [
-        {
-            nome: "Stable Diffusion XL Base",
-            url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0", 
-            confiabilidade: 10, // ✅ DUPLICADO DO FUNCIONANDO
-            categoria: "media",
-            tempo_estimado: "30-60s"
-        },
-        {
-            nome: "Playground v2.5",
-            url: "https://api-inference.huggingface.co/models/playgroundai/playground-v2.5-1024px-aesthetic",
-            confiabilidade: 8,
-            categoria: "media",
-            tempo_estimado: "45-75s"
-        },
-        {
-            nome: "RealVisXL v4",
-            url: "https://api-inference.huggingface.co/models/SG161222/RealVisXL_V4.0",
-            confiabilidade: 7,
-            categoria: "media",
-            tempo_estimado: "40-70s"
-        },
-        {
-            nome: "DreamShaper XL",
-            url: "https://api-inference.huggingface.co/models/Lykon/dreamshaper-xl-1-0",
-            confiabilidade: 7,
-            categoria: "media",
-            tempo_estimado: "35-65s"
-        }
-    ],
-    
-    // 🔴 CATEGORIA ALTA (Máxima qualidade)
-    alta: [
-        {
-            nome: "SDXL Base 1.0 Pro", 
-            url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
-            confiabilidade: 10, // ✅ CONFIRMADO FUNCIONANDO
-            categoria: "alta",
-            tempo_estimado: "60-120s"
-        },
-        {
-            nome: "FLUX.1 Dev",
-            url: "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev",
-            confiabilidade: 9,
-            categoria: "alta",
-            tempo_estimado: "90-180s"
-        },
-        {
-            nome: "FLUX.1 Schnell",
-            url: "https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell", 
-            confiabilidade: 8,
-            categoria: "alta",
-            tempo_estimado: "60-120s"
-        },
-        {
-            nome: "Juggernaut XL",
-            url: "https://api-inference.huggingface.co/models/RunDiffusion/Juggernaut-XL-v9",
-            confiabilidade: 7,
-            categoria: "alta",
-            tempo_estimado: "75-150s"
-        }
+    RENASCENTISTA: [
+        "composição em triângulo equilibrado",
+        "fundo paisagístico clássico",
+        "figuras em pose idealizada",
+        "detalhes anatômicos perfeitos",
+        "arquitetura clássica romana",
+        "jardim renascentista ao fundo",
+        "halos dourados geométricos"
     ]
 };
 
-// ========== FUNÇÃO DE BACKUP COM MODELOS PÚBLICOS ==========
-const modelosPublicosSemChave = [
+// ============================================================================
+// FIM PARTE 2: DEFINIÇÕES DE ESTILOS ARTÍSTICOS
+// ============================================================================
+
+// ============================================================================
+// INÍCIO PARTE 3: MODELOS DE IA E PARÂMETROS
+// ============================================================================
+
+// Modelos Hugging Face prioritários (testados e funcionais)
+const modelosHFPrioritarios = [
+    {
+        nome: "SDXL Base 1.0",
+        url: "stabilityai/stable-diffusion-xl-base-1.0",
+        categoria: "alta",
+        confiabilidade: 10,
+        tempo_estimado: "30-60s",
+        parametros_customizados: {
+            num_inference_steps: 50,
+            guidance_scale: 8.5,
+            width: 1024,
+            height: 1024
+        }
+    },
+    {
+        nome: "SDXL Turbo",
+        url: "stabilityai/sdxl-turbo",
+        categoria: "rapida",
+        confiabilidade: 8,
+        tempo_estimado: "10-20s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 7.5,
+            width: 1024,
+            height: 1024
+        }
+    }
+];
+
+// APIs alternativas (sem necessidade de chave)
+const apisAlternativas = [
     {
         nome: "Pollinations AI",
-        url: "https://image.pollinations.ai/prompt/",
+        confiabilidade: 9,
         funcao: async (prompt) => {
             const encodedPrompt = encodeURIComponent(prompt);
-            const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=640&height=480&model=flux&enhance=true&nologo=true&seed=${Math.random()}`;
+            const seed = Math.floor(Math.random() * 1000000);
+            const url = `${API_URLS.POLLINATIONS}${encodedPrompt}?width=1024&height=1024&model=flux&enhance=true&nologo=true&seed=${seed}`;
+            
+            console.log('🔄 Gerando com Pollinations...');
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Status: ${response.status}`);
+            
+            const blob = await response.blob();
+            if (blob.size < 5000) throw new Error('Imagem muito pequena');
+            
+            return blob;
+        }
+    },
+    {
+        nome: "Pollinations Turbo",
+        confiabilidade: 7,
+        funcao: async (prompt) => {
+            const encodedPrompt = encodeURIComponent(prompt);
+            const url = `${API_URLS.POLLINATIONS}${encodedPrompt}?width=512&height=512&model=turbo&enhance=false&nologo=true`;
             
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Status: ${response.status}`);
             return await response.blob();
         }
-    },
-    {
-        nome: "Stable Diffusion Public API",
-        url: "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
-        funcao: async (prompt) => {
-            // Tentar sem chave primeiro
-            const response = await fetch("https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    inputs: prompt,
-                    parameters: {
-                        num_inference_steps: 20,
-                        guidance_scale: 7.5,
-                        width: 640,
-                        height: 480
-                    }
-                })
-            });
-            
-            if (!response.ok) throw new Error(`Status: ${response.status}`);
-            return await response.blob();
-        }
     }
 ];
-// Prompts específicos para cada tema com foco no texto do versículo
-const criarPromptPersonalizado = (tema, textoVersiculo) => {
-    const palavrasChave = extrairPalavrasChave(textoVersiculo);
-    
-    const estilosBase = {
-        esperanca: "divine light, golden rays, heavenly atmosphere, hopeful scene",
-        amor: "warm colors, hearts, romantic lighting, loving atmosphere", 
-        paz: "peaceful landscape, calm waters, serene environment, tranquil scene",
-        fe: "spiritual light, praying hands, sacred atmosphere, divine presence",
-        sabedoria: "ancient books, wise owl, library setting, knowledge symbols",
-        forca: "powerful imagery, strength symbols, dramatic lighting, heroic scene",
-        protecao: "guardian angel, protective shield, safe haven, shelter"
-    };
-    
-    return `beautiful digital art, ${estilosBase[tema]}, inspired by "${palavrasChave}", masterpiece quality, detailed, professional artwork, cinematic lighting, no text overlay, clean composition`;
+
+// Parâmetros específicos por estilo
+const parametrosEstilos = {
+    BARROCO: {
+        num_inference_steps: 45,
+        guidance_scale: 11.5,
+        temperature: 0.8,
+        top_p: 0.92
+    },
+    RENASCENTISTA: {
+        num_inference_steps: 50,
+        guidance_scale: 9.5,
+        temperature: 0.7,
+        top_p: 0.9
+    }
 };
 
-function extrairPalavrasChave(texto) {
-    const palavrasIgnorar = [
-        'para', 'porque', 'senhor', 'deus', 'seja', 'está', 'como', 'todo', 'mais', 
-        'pelo', 'pela', 'uma', 'dos', 'das', 'com', 'não', 'que', 'ele', 'ela', 
-        'seu', 'sua', 'nos', 'nas', 'por', 'este', 'esta', 'isso', 'muito', 'bem'
-    ];
-    
-    return texto.toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .split(/[,.;:!?\s]+/)
-        .filter(palavra => palavra.length > 3)
-        .filter(palavra => !palavrasIgnorar.includes(palavra))
-        .slice(0, 5)
-        .join(', ');
+// ============================================================================
+// FIM PARTE 3: MODELOS DE IA E PARÂMETROS
+// ============================================================================
+
+// ============================================================================
+// INÍCIO PARTE 4: FUNÇÕES UTILITÁRIAS
+// ============================================================================
+
+// Função de delay
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// ========== INICIALIZAÇÃO ==========
-document.addEventListener('DOMContentLoaded', function() {
-    carregarVersiculos();
-    configurarEventListeners();
-    atualizarContadores();
-    mostrarToast('✅ Gerador de Imagens IA carregado!');
-});
-
-function configurarEventListeners() {
-    document.getElementById('gerarVersiculo').addEventListener('click', gerarVersiculoComIA);
-    document.getElementById('temaEscolhido').addEventListener('change', gerarVersiculoComIA);
-    document.getElementById('baixarImagem').addEventListener('click', baixarImagem);
-    document.getElementById('compartilharWhatsApp').addEventListener('click', compartilharWhatsApp);
-    document.getElementById('copiarTexto').addEventListener('click', copiarTexto);
-    document.getElementById('compartilharFacebook').addEventListener('click', compartilharFacebook);
+// Mostrar progresso na interface
+function mostrarProgresso(mensagem, porcentagem) {
+    console.log(`📊 ${mensagem} - ${porcentagem}%`);
     
-    document.getElementById('opacidadeFundo').addEventListener('input', function() {
-        const valor = Math.round(this.value * 100);
-        document.getElementById('opacidadeDisplay').textContent = valor + '%';
-    });
-}
-
-async function carregarVersiculos() {
-    try {
-        const response = await fetch('versiculos.json');
-        versiculos = await response.json();
-        gerarVersiculoComIA();
-    } catch (error) {
-        console.error('Erro ao carregar versículos:', error);
-        // Fallback com versículos embutidos
-        versiculos = {
-            esperanca: [
-                { texto: "Porque eu bem sei os pensamentos que tenho a vosso respeito, diz o Senhor; pensamentos de paz, e não de mal, para vos dar o fim que esperais.", referencia: "Jeremias 29:11" },
-                { texto: "Seja a vossa esperança no Senhor, desde agora e para sempre.", referencia: "Salmos 131:3" }
-            ],
-            amor: [
-                { texto: "Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito.", referencia: "João 3:16" },
-                { texto: "Nisto está o amor: não fomos nós que amamos a Deus, mas que ele nos amou.", referencia: "1 João 4:10" }
-            ],
-            paz: [
-                { texto: "Deixo-vos a paz, a minha paz vos dou; não vo-la dou como o mundo a dá.", referencia: "João 14:27" },
-                { texto: "E a paz de Deus, que excede todo o entendimento, guardará os vossos corações.", referencia: "Filipenses 4:7" }
-            ],
-            fe: [
-                { texto: "Ora, a fé é o firme fundamento das coisas que se esperam.", referencia: "Hebreus 11:1" },
-                { texto: "Porque andamos por fé, e não por vista.", referencia: "2 Coríntios 5:7" }
-            ],
-            sabedoria: [
-                { texto: "O temor do Senhor é o princípio da sabedoria.", referencia: "Provérbios 9:10" },
-                { texto: "Se algum de vós tem falta de sabedoria, peça-a a Deus.", referencia: "Tiago 1:5" }
-            ],
-            forca: [
-                { texto: "Tudo posso naquele que me fortalece.", referencia: "Filipenses 4:13" },
-                { texto: "Esforça-te, e tem bom ânimo; não temas, nem te espantes.", referencia: "Josué 1:9" }
-            ],
-            protecao: [
-                { texto: "O Senhor te guardará de todo o mal; guardará a tua alma.", referencia: "Salmos 121:7" },
-                { texto: "Aquele que habita no esconderijo do Altíssimo descansará à sombra do Todo-Poderoso.", referencia: "Salmos 91:1" }
-            ]
-        };
-        gerarVersiculoComIA();
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+    
+    if (progressBar) {
+        progressBar.style.width = `${porcentagem}%`;
+        progressBar.setAttribute('aria-valuenow', porcentagem);
+    }
+    
+    if (progressText) {
+        progressText.textContent = mensagem;
     }
 }
 
-// ========== SISTEMA DE PROGRESSO VISUAL ==========
-function mostrarProgresso(mensagem, porcentagem, tipo = 'primary') {
-    let progressContainer = document.getElementById('progressContainer');
+// Sistema de notificações toast
+function mostrarToast(mensagem, tipo = 'success') {
+    console.log(`📢 ${tipo.toUpperCase()}: ${mensagem}`);
     
-    // Criar container de progresso se não existir
-    if (!progressContainer) {
-        progressContainer = document.createElement('div');
-        progressContainer.id = 'progressContainer';
-        progressContainer.className = 'progress-container';
-        progressContainer.innerHTML = `
-            <div class="progress-header">
-                <span class="progress-icon">🎨</span>
-                <span class="progress-title">Gerando Imagem com IA</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill"></div>
-                <div class="progress-text">0%</div>
-            </div>
-            <div class="progress-status">Iniciando...</div>
-            <div class="progress-steps">
-                <div class="step" data-step="1">📝 Analisando texto</div>
-                <div class="step" data-step="2">🤖 Conectando IA</div>
-                <div class="step" data-step="3">🎨 Gerando arte</div>
-                <div class="step" data-step="4">✨ Finalizando</div>
-            </div>
-        `;
-        
-        const imageContainer = document.querySelector('.image-container');
-        imageContainer.insertBefore(progressContainer, document.getElementById('canvasImagem'));
-    }
+    const toastContainer = document.getElementById('toast-container') || createToastContainer();
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${tipo}`;
+    toast.innerHTML = `
+        <div class="toast-content">
+            <span class="toast-icon">${tipo === 'success' ? '✅' : '❌'}</span>
+            <span class="toast-message">${mensagem}</span>
+        </div>
+    `;
     
-    // Atualizar progresso
-    progressContainer.style.display = 'block';
-    progressContainer.querySelector('.progress-fill').style.width = porcentagem + '%';
-    progressContainer.querySelector('.progress-text').textContent = Math.round(porcentagem) + '%';
-    progressContainer.querySelector('.progress-status').textContent = mensagem;
+    toastContainer.appendChild(toast);
     
-    // Atualizar steps visuais
-    const steps = progressContainer.querySelectorAll('.step');
-    steps.forEach((step, index) => {
-        const stepNum = index + 1;
-        if (porcentagem >= (stepNum * 25 - 15)) {
-            step.classList.add('active');
-        }
-        if (porcentagem >= (stepNum * 25)) {
-            step.classList.add('completed');
-        }
-    });
-    
-    // Adicionar classe de tipo
-    progressContainer.className = `progress-container ${tipo}`;
+    setTimeout(() => {
+        toast.classList.add('toast-fade-out');
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
 }
 
-function ocultarProgresso() {
-    const progressContainer = document.getElementById('progressContainer');
-    if (progressContainer) {
-        setTimeout(() => {
-            progressContainer.style.display = 'none';
-            // Reset visual
-            progressContainer.querySelector('.progress-fill').style.width = '0%';
-            progressContainer.querySelector('.progress-text').textContent = '0%';
-            progressContainer.querySelectorAll('.step').forEach(step => {
-                step.classList.remove('active', 'completed');
-            });
-        }, 1500);
-    }
+// Criar container de toast se não existir
+function createToastContainer() {
+    const container = document.createElement('div');
+    container.id = 'toast-container';
+    container.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    `;
+    document.body.appendChild(container);
+    return container;
 }
 
-// ========== GERAÇÃO PRINCIPAL COM IA ==========
-async function gerarVersiculoComIA() {
-    const tema = document.getElementById('temaEscolhido').value;
-    const versiculosTema = versiculos[tema];
-    
-    if (!versiculosTema || versiculosTema.length === 0) {
-        mostrarToast('❌ Nenhum versículo encontrado para este tema', 'error');
-        return;
-    }
-    
-    // Desabilitar botão
-    const botaoGerar = document.getElementById('gerarVersiculo');
-    botaoGerar.disabled = true;
-    botaoGerar.innerHTML = '🎨 Criando arte...';
-    
-    try {
-        // 1. Selecionar versículo aleatório
-        mostrarProgresso('📝 Selecionando versículo inspirador...', 5);
-        await delay(800);
-        
-        const indiceAleatorio = Math.floor(Math.random() * versiculosTema.length);
-        versiculoAtual = versiculosTema[indiceAleatorio];
-        
-        // Atualizar interface com o versículo
-        document.getElementById('versiculoTexto').textContent = `"${versiculoAtual.texto}"`;
-        document.getElementById('versiculoReferencia').textContent = versiculoAtual.referencia;
-        
-        // 2. Processar texto e criar prompt
-        mostrarProgresso('🧠 Analisando conteúdo do versículo...', 15);
-        await delay(1000);
-        
-        const prompt = criarPromptPersonalizado(tema, versiculoAtual.texto);
-        console.log('🎨 Prompt criado:', prompt);
-        
-        // 3. Tentar gerar imagem com IA
-        mostrarProgresso('🤖 Conectando com IA Hugging Face...', 25);
-        await delay(500);
-        
-        const imagemGerada = await tentarGerarImagemIA(prompt, tema);
-        
-        if (imagemGerada) {
-            // 4. Processar imagem gerada
-            mostrarProgresso('✨ Processando imagem gerada...', 85);
-            await delay(800);
-            
-            await processarImagemFinal(imagemGerada);
-            
-            mostrarProgresso('🙏 Obra inspiradora concluída!', 100, 'success');
-            mostrarToast('✅ Imagem gerada com IA baseada no versículo!');
-            
-        } else {
-            // Fallback para imagem artística local
-            mostrarProgresso('🎨 Criando arte local inspirada no texto...', 70);
-            await delay(1000);
-            
-            gerarImagemArtisticaLocal(tema);
-            
-            mostrarProgresso('✅ Arte local criada com base no versículo!', 100, 'warning');
-            mostrarToast('🎨 Imagem criada localmente baseada no texto!', 'warning');
-        }
-        
-        incrementarContador();
-        
-    } catch (error) {
-        console.error('Erro na geração:', error);
-        mostrarProgresso('⚠️ Erro na geração, criando arte alternativa...', 100, 'error');
-        gerarImagemArtisticaLocal(tema);
-        mostrarToast('⚠️ Erro na IA, usando arte local baseada no texto', 'warning');
-    } finally {
-        // Restaurar botão
-        botaoGerar.disabled = false;
-        botaoGerar.innerHTML = '🎨 Gerar Nova Imagem IA';
-        
-        // Ocultar progresso após delay
-        setTimeout(ocultarProgresso, 2000);
-    }
+// Formatar tempo
+function formatarTempo(ms) {
+    const segundos = Math.floor(ms / 1000);
+    return segundos > 60 ? `${Math.floor(segundos / 60)}m ${segundos % 60}s` : `${segundos}s`;
 }
 
-// ========== TENTATIVAS DE GERAÇÃO COM IA ==========
+// ============================================================================
+// FIM PARTE 4: FUNÇÕES UTILITÁRIAS
+// ============================================================================
 
-// ========== FUNÇÃO PRINCIPAL COM ESTRATÉGIA INTELIGENTE ==========
-// ========== SUBSTITUIR A FUNÇÃO ATUAL ==========
-async function tentarGerarImagemIA(prompt, tema) {
-    console.log('🚀 Iniciando geração otimizada...');
-    
-    // Estratégia otimizada: começar pelos que funcionam
-    const modelosOrdenados = [
-        ...modelosHuggingFaceFuncionais.rapida.filter(m => m.confiabilidade >= 8),
-        ...modelosHuggingFaceFuncionais.media.filter(m => m.confiabilidade >= 7), 
-        ...modelosHuggingFaceFuncionais.alta.filter(m => m.confiabilidade >= 7)
-    ].sort((a, b) => b.confiabilidade - a.confiabilidade); // Ordenar por confiabilidade
-    
-    console.log(`📋 Testando ${modelosOrdenados.length} modelos otimizados`);
-    
-    // Tentar modelos HuggingFace funcionais
-    for (let i = 0; i < modelosOrdenados.length; i++) {
-        const modelo = modelosOrdenados[i];
-        
-        try {
-            mostrarProgresso(`🤖 ${modelo.nome}`, 10 + (i * 30));
-            console.log(`🔄 Tentando ${modelo.nome} (Conf: ${modelo.confiabilidade}/10)`);
-            
-            const parametros = getParametrosPorCategoria(modelo.categoria);
-            const blob = await chamarAPIHuggingFace(modelo.url, prompt, parametros);
-            
-            if (blob && blob.size > 5000) { // Validar tamanho mínimo
-                console.log(`✅ ${modelo.nome} funcionou! (${blob.size} bytes)`);
-                mostrarToast(`🎨 Imagem criada por: ${modelo.nome}`, 'success');
-                return blob;
-            }
-            
-        } catch (error) {
-            console.log(`❌ ${modelo.nome} falhou: ${error.message}`);
-        }
-        
-        await delay(500); // Delay reduzido
-    }
-    
-    // Fallback para APIs públicas
-    console.log('🆓 Tentando APIs alternativas...');
-    for (const api of modelosPublicosSemChave) {
-        try {
-            mostrarProgresso(`🆓 ${api.nome}`, 70);
-            const blob = await api.funcao(prompt);
-            
-            if (blob && blob.size > 1000) {
-                console.log(`✅ ${api.nome} funcionou!`);
-                mostrarToast(`🎨 Imagem criada por: ${api.nome}`, 'success');
-                return blob;
-            }
-        } catch (error) {
-            console.log(`❌ ${api.nome} falhou:`, error.message);
-        }
-    }
-    
-    console.log('⚠️ Todos os modelos falharam');
-    return null;
-}
+// ============================================================================
+// INÍCIO PARTE 5: GESTÃO DE API KEYS
+// ============================================================================
 
-// ========== FUNÇÕES AUXILIARES ==========
-
-// Parâmetros otimizados por categoria
-function getParametrosPorCategoria(categoria) {
-    const parametros = {
-        rapida: {
-            steps: 8,
-            width: 512,
-            height: 384,
-            guidance_scale: 6.5
-        },
-        media: {
-            steps: 15,
-            width: 640,
-            height: 480,
-            guidance_scale: 7.5
-        },
-        alta: {
-            steps: 25,
-            width: 1024,
-            height: 768,
-            guidance_scale: 8.5
-        }
-    };
-    return parametros[categoria] || parametros.media;
-}
-
-// Pausa adaptativa
-function getPausaPorCategoria(categoria) {
-    const pausas = {
-        rapida: 800,   // 0.8s
-        media: 1200,   // 1.2s  
-        alta: 2000     // 2.0s
-    };
-    return pausas[categoria] || 1000;
-}
-
-// Classificar tipos de erro
-function classifyError(errorMessage) {
-    if (errorMessage.includes('401') || errorMessage.includes('Invalid username')) {
-        return { type: 'auth', emoji: '🔐', message: 'Sem autenticação', waitTime: 0 };
-    } else if (errorMessage.includes('503') || errorMessage.includes('loading')) {
-        return { type: 'loading', emoji: '⏳', message: 'Modelo carregando', waitTime: 3 };
-    } else if (errorMessage.includes('429')) {
-        return { type: 'rate', emoji: '⏰', message: 'Limite de rate', waitTime: 0 };
-    } else if (errorMessage.includes('400')) {
-        return { type: 'prompt', emoji: '🚫', message: 'Prompt inválido', waitTime: 0 };
-    } else if (errorMessage.includes('500')) {
-        return { type: 'server', emoji: '💥', message: 'Erro do servidor', waitTime: 0 };
-    } else {
-        return { type: 'unknown', emoji: '❓', message: 'Erro desconhecido', waitTime: 0 };
-    }
-}
-
-
-// ========== CONFIGURAÇÃO SEGURA ==========
+// Obter API key de múltiplas fontes
 function getAPIKey() {
-    // Tentar várias fontes de configuração
-    if (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.HUGGING_FACE_API_KEY) {
-        console.log('🔑 Usando chave do CONFIG (segura)');
-        return window.CONFIG.HUGGING_FACE_API_KEY;
-    }
-    
-    // Fallback para desenvolvimento local
-    if (typeof HUGGING_FACE_API_KEY !== 'undefined' && HUGGING_FACE_API_KEY !== 'SUA_CHAVE_AQUI') {
-        console.log('🔑 Usando chave local (desenvolvimento)');
-        return HUGGING_FACE_API_KEY;
-    }
-    
-    console.log('🚫 Nenhuma chave configurada');
-    return null;
-}
-
-// ========== FUNÇÃO SEGURA PARA CHAMAR API ==========
-async function chamarAPIHuggingFaceSeguro(modelUrl, prompt, parametros) {
-    const apiKey = getAPIKey();
-    
-    if (!apiKey) {
-        throw new Error('Chave API não configurada');
-    }
-    
-    const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-    };
-    
-    // Resto da implementação...
-    const response = await fetch(modelUrl, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({
-            inputs: prompt,
-            parameters: parametros
-        })
-    });
-    
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-    }
-    
-    return await response.blob();
-}
-
-
-
-
-// ========== FUNÇÃO HUGGING FACE OTIMIZADA ==========
-
-
-// ========== FUNÇÃO PRINCIPAL (MANTÉM O NOME) ==========
-async function chamarAPIHuggingFace(modelUrl, prompt, parametros) {
-    // Redirecionar para a versão segura
-    return await chamarAPIHuggingFaceSeguro(modelUrl, prompt, parametros);
-}
-
-// ========== FUNÇÃO SEGURA (NOVA IMPLEMENTAÇÃO) ==========
-async function chamarAPIHuggingFaceSeguro(modelUrl, prompt, parametros) {
-    console.log(`🔄 Chamando: ${modelUrl.split('/').pop()}`);
-    
-    // Obter chave de forma segura
-    const apiKey = getAPIKey();
-    
-    if (!apiKey) {
-        throw new Error('🔑 Chave API não configurada ou inválida');
-    }
-    
-    // Configurar headers
-    const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'User-Agent': 'BibleAI/1.0'
-    };
-    
-    // Preparar parâmetros seguros
-    const parametrosSeguro = {
-        num_inference_steps: parametros.steps || 15,
-        guidance_scale: parametros.guidance_scale || 7.5,
-        width: parametros.width || 640,
-        height: parametros.height || 480,
-        negative_prompt: "blurry, bad quality, distorted, ugly, text, watermark, signature, low resolution"
-    };
-    
-    try {
-        const response = await fetch(modelUrl, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify({
-                inputs: prompt,
-                parameters: parametrosSeguro
-            })
-        });
-        
-        console.log(`📡 Status: ${response.status} | Modelo: ${modelUrl.split('/').pop()}`);
-        
-        // Tratamento detalhado de erros
-        if (!response.ok) {
-            const errorText = await response.text();
-            const errorInfo = await analisarErroHuggingFace(response.status, errorText, modelUrl);
-            throw new Error(errorInfo.message);
-        }
-        
-        const blob = await response.blob();
-        
-        // Validar resposta
-        if (blob.size < 1000) {
-            throw new Error('🚫 Resposta muito pequena, provável erro no modelo');
-        }
-        
-        console.log(`✅ Sucesso: ${blob.size} bytes | ${modelUrl.split('/').pop()}`);
-        return blob;
-        
-    } catch (error) {
-        console.log(`❌ Erro em ${modelUrl.split('/').pop()}: ${error.message}`);
-        throw error;
-    }
-}
-
-// ========== FUNÇÃO PARA ANALISAR ERROS ==========
-async function analisarErroHuggingFace(status, errorText, modelUrl) {
-    let errorObj;
-    try {
-        errorObj = JSON.parse(errorText);
-    } catch {
-        errorObj = { error: errorText };
-    }
-    
-    const modelName = modelUrl.split('/').pop();
-    
-    switch (status) {
-        case 401:
-            if (errorText.includes('Invalid username')) {
-                return {
-                    type: 'invalid_key',
-                    message: '🔐 Chave API inválida ou expirada',
-                    suggestion: 'Verifique se a chave está correta'
-                };
-            }
-            return {
-                type: 'unauthorized', 
-                message: '🚫 Acesso não autorizado ao modelo',
-                suggestion: 'Modelo pode ser privado ou chave sem permissões'
-            };
-            
-        case 403:
-            return {
-                type: 'forbidden',
-                message: '🔒 Acesso negado ao modelo', 
-                suggestion: 'Modelo pode estar restrito'
-            };
-            
-        case 503:
-            return {
-                type: 'loading',
-                message: `⏳ Modelo ${modelName} está carregando`,
-                suggestion: 'Aguarde alguns segundos'
-            };
-            
-        case 429:
-            return {
-                type: 'rate_limit',
-                message: '⏰ Limite de requisições excedido',
-                suggestion: 'Aguarde antes de tentar novamente'
-            };
-            
-        case 400:
-            return {
-                type: 'bad_request',
-                message: '🚫 Parâmetros inválidos',
-                suggestion: 'Verifique o prompt e parâmetros'
-            };
-            
-        case 500:
-            return {
-                type: 'server_error',
-                message: `💥 Erro interno do modelo ${modelName}`,
-                suggestion: 'Tente outro modelo'
-            };
-            
-        default:
-            return {
-                type: 'unknown',
-                message: `❓ Erro ${status}: ${errorObj.error || errorText}`,
-                suggestion: 'Erro desconhecido'
-            };
-    }
-}
-
-// ========== FUNÇÃO PARA OBTER CHAVE SEGURA ==========
-function getAPIKey() {
-    // 1. Tentar CONFIG do GitHub Actions/Netlify/Vercel
-    if (typeof window !== 'undefined' && window.CONFIG && window.CONFIG.HUGGING_FACE_API_KEY) {
-        const key = window.CONFIG.HUGGING_FACE_API_KEY;
-        if (key && key !== '{{ HUGGING_FACE_API_KEY }}' && key.startsWith('hf_')) {
+    // 1. CONFIG do GitHub Actions (produção)
+    if (typeof window !== 'undefined' && window.CONFIG?.HUGGING_FACE_API_KEY) {
+        const chave = window.CONFIG.HUGGING_FACE_API_KEY;
+        if (chave && chave !== '{{ HUGGING_FACE_API_KEY }}' && chave.startsWith('hf_')) {
             console.log('🔑 Usando chave do CONFIG (produção segura)');
-            return key;
+            return chave;
         }
     }
     
-    // 2. Tentar variável local (desenvolvimento)
+    // 2. Variável global (desenvolvimento)
     if (typeof HUGGING_FACE_API_KEY !== 'undefined' && 
         HUGGING_FACE_API_KEY && 
         HUGGING_FACE_API_KEY !== 'SUA_CHAVE_AQUI' && 
@@ -878,1012 +317,830 @@ function getAPIKey() {
         return HUGGING_FACE_API_KEY;
     }
     
-    // 3. Tentar localStorage (backup)
-    if (typeof localStorage !== 'undefined') {
-        const storedKey = localStorage.getItem('hf_api_key');
-        if (storedKey && storedKey.startsWith('hf_')) {
-            console.log('🔑 Usando chave do localStorage');
-            return storedKey;
-        }
+    // 3. localStorage (usuário definiu manualmente)
+    const storedKey = localStorage.getItem('hf_api_key');
+    if (storedKey?.startsWith('hf_')) {
+        console.log('🔑 Usando chave do localStorage');
+        return storedKey;
+    }
+    
+    // 4. Chave manual temporária
+    if (window.CHAVE_MANUAL?.startsWith('hf_')) {
+        console.log('🔑 Usando chave manual temporária');
+        return window.CHAVE_MANUAL;
     }
     
     console.log('🚫 Nenhuma chave API encontrada');
     return null;
 }
 
-// ========== FUNÇÃO PARA SALVAR CHAVE LOCALMENTE (DESENVOLVIMENTO) ==========
-function salvarChaveLocal(chave) {
-    if (chave && chave.startsWith('hf_') && typeof localStorage !== 'undefined') {
-        localStorage.setItem('hf_api_key', chave);
-        console.log('💾 Chave salva localmente para desenvolvimento');
+// Definir chave manualmente (para debug)
+function definirChaveManualmente(chave) {
+    if (!chave || !chave.startsWith('hf_')) {
+        console.error('❌ Chave inválida - deve começar com "hf_"');
+        return false;
+    }
+    
+    localStorage.setItem('hf_api_key', chave);
+    window.CHAVE_MANUAL = chave;
+    console.log('💾 Chave salva com sucesso!');
+    mostrarToast('Chave API configurada!', 'success');
+    return true;
+}
+
+// Verificar status da chave
+async function verificarChaveAPI() {
+    const chave = getAPIKey();
+    if (!chave) return false;
+    
+    try {
+        const response = await fetch('https://huggingface.co/api/whoami', {
+            headers: { 'Authorization': `Bearer ${chave}` }
+        });
+        const data = await response.json();
+        console.log('✅ Chave válida:', data.name || 'Usuário verificado');
         return true;
-    }
-    return false;
-}// ========== PROCESSAMENTO DA IMAGEM FINAL ==========
-async function processarImagemFinal(imageBlob) {
-    return new Promise((resolve) => {
-        const canvas = document.getElementById('canvasImagem');
-        const ctx = canvas.getContext('2d');
-        
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        const img = new Image();
-        img.onload = function() {
-            // Desenhar imagem da IA
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            
-            // Adicionar overlay e texto do versículo
-            adicionarOverlayTexto(ctx);
-            adicionarTextoVersiculoNaImagem(ctx);
-            
-            // Salvar blob para download
-            canvas.toBlob((blob) => {
-                imagemAtualBlob = blob;
-                resolve();
-            }, 'image/png');
-        };
-        
-        img.onerror = () => {
-            console.error('Erro ao carregar imagem gerada');
-            gerarImagemArtisticaLocal(document.getElementById('temaEscolhido').value);
-            resolve();
-        };
-        
-        img.src = URL.createObjectURL(imageBlob);
-    });
-}
-
-// ========== UTILITÁRIOS ==========
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function incrementarContador() {
-    const contador = parseInt(localStorage.getItem('contador_total') || '0') + 1;
-    localStorage.setItem('contador_total', contador);
-    atualizarContadores();
-}
-
-function atualizarContadores() {
-    const contador = localStorage.getItem('contador_total') || '0';
-    const elemento = document.getElementById('contadorVersiculos');
-    if (elemento) {
-        elemento.textContent = `${contador} imagens geradas com IA`;
+    } catch (error) {
+        console.log('❌ Chave inválida ou expirada');
+        return false;
     }
 }
 
-// ========== GERAÇÃO ARTÍSTICA LOCAL (FALLBACK) ==========
-function gerarImagemArtisticaLocal(tema) {
-    const canvas = document.getElementById('canvasImagem');
+// ============================================================================
+// FIM PARTE 5: GESTÃO DE API KEYS
+// ============================================================================
+
+// ============================================================================
+// INÍCIO PARTE 6: FUNÇÕES DE GERAÇÃO DE PROMPTS E ESTILOS
+// ============================================================================
+
+// Escolher estilo aleatório com pesos
+function escolherEstiloAleatorio() {
+    const estilos = [
+        { nome: "BARROCO", peso: estilosArtisticos.BARROCO.peso },
+        { nome: "RENASCENTISTA", peso: estilosArtisticos.RENASCENTISTA.peso }
+    ];
+    
+    const totalPeso = estilos.reduce((sum, s) => sum + s.peso, 0);
+    let rand = Math.random() * totalPeso;
+    
+    for (const estilo of estilos) {
+        rand -= estilo.peso;
+        if (rand <= 0) {
+            console.log(`🎨 Estilo escolhido: ${estilo.nome}`);
+            return estilo.nome;
+        }
+    }
+    
+    return "BARROCO"; // Fallback seguro
+}
+
+// Gerar prompt estilizado com elementos históricos
+function gerarPromptEstilizado(promptBase) {
+    const estiloEscolhido = escolherEstiloAleatorio();
+    const config = estilosArtisticos[estiloEscolhido];
+    
+    // Escolher elemento histórico aleatório
+    const elementos = elementosHistoricos[estiloEscolhido];
+    const elementoAleatorio = elementos[Math.floor(Math.random() * elementos.length)];
+    
+    // Escolher artistas de referência
+    const artistasRef = config.artistas.slice(0, 2).join(" and ");
+    
+    // Construir prompt completo
+    const promptFinal = [
+        `masterpiece, ${config.nome.toLowerCase()} painting style`,
+        promptBase,
+        elementoAleatorio,
+        ...config.termosPrompt,
+        `by ${artistasRef}`,
+        "museum quality restoration",
+        "canvas texture visible",
+        "aged varnish effect",
+        "authentic historical artwork",
+        "no modern elements"
+    ].join(", ");
+    
+    // Log detalhado
+    console.log(`🎨 ESTILO: ${config.nome} (${config.periodo})`);
+    console.log(`🖌️ ARTISTAS: ${artistasRef}`);
+    console.log(`📝 ELEMENTO: ${elementoAleatorio}`);
+    console.log(`💡 PROMPT: ${promptFinal.substring(0, 150)}...`);
+    
+    return {
+        prompt: promptFinal,
+        negative_prompt: config.termosNegativos.join(", "),
+        estilo: estiloEscolhido
+    };
+}
+
+// Criar prompt baseado no versículo e tema
+function criarPromptBase(versiculo, tema) {
+    const palavrasChave = extrairPalavrasChave(versiculo.texto);
+    
+    const temasVisuais = {
+        esperanca: "hopeful scene, bright future, sunrise, ascending birds",
+        fe: "faith symbols, divine light, praying hands, sacred atmosphere",
+        amor: "warm embrace, hearts, compassionate scene, gentle touch",
+        sabedoria: "ancient books, wise owl, library setting, knowledge symbols",
+        paz: "calm waters, dove, olive branch, serene landscape",
+        forca: "mighty mountains, lion, strong oak tree, fortress",
+        gratidao: "harvest scene, thanksgiving, abundant fruits, blessing hands",
+        oracao: "kneeling figure, cathedral, candlelight, spiritual moment"
+    };
+    
+    const elementosTema = temasVisuais[tema] || "spiritual scene";
+    
+    return `beautiful artwork, divine light, golden rays, heavenly atmosphere, ${elementosTema}, inspired by "${palavrasChave}"`;
+}
+
+// Extrair palavras-chave do versículo
+function extrairPalavrasChave(texto) {
+    const palavrasIgnoradas = ['o', 'a', 'de', 'do', 'da', 'e', 'que', 'para', 'com', 'em', 'por'];
+    const palavras = texto.toLowerCase()
+        .replace(/[.,;:!?]/g, '')
+        .split(' ')
+        .filter(p => p.length > 2 && !palavrasIgnoradas.includes(p))
+        .slice(0, 6)
+        .join(", ");
+    
+    return palavras || "biblical scene";
+}
+
+// ============================================================================
+// FIM PARTE 6: FUNÇÕES DE GERAÇÃO DE PROMPTS E ESTILOS
+// ============================================================================
+
+// ============================================================================
+// INÍCIO PARTE 7: FUNÇÕES DE CHAMADA DE API
+// ============================================================================
+
+// Chamar API Hugging Face com segurança e retry
+async function chamarAPIHuggingFaceSeguro(url, prompt, parametros) {
+    const chave = getAPIKey();
+    if (!chave) {
+        throw new Error('🔑 Chave API não configurada ou inválida');
+    }
+    
+    const tentarChamada = async (tentativa = 1) => {
+        try {
+            console.log(`🔄 Chamando: ${url.split('/').pop()} (tentativa ${tentativa})`);
+            
+            const response = await fetch(API_URLS.HUGGING_FACE_BASE + url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${chave}`,
+                    'Content-Type': 'application/json',
+                    'x-wait-for-model': 'true'
+                },
+                body: JSON.stringify({
+                    inputs: prompt,
+                    parameters: parametros
+                }),
+                signal: AbortSignal.timeout(CONFIG.API_TIMEOUT)
+            });
+            
+            console.log(`📡 Status: ${response.status} | Modelo: ${url.split('/').pop()}`);
+            
+            if (response.status === 503) {
+                console.log('⏳ Modelo carregando, aguardando...');
+                await delay(5000);
+                if (tentativa < CONFIG.MAX_RETRIES) {
+                    return tentarChamada(tentativa + 1);
+                }
+            }
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+            
+            const blob = await response.blob();
+            
+            if (blob.size < 1000) {
+                throw new Error('Imagem muito pequena ou corrompida');
+            }
+            
+            console.log(`✅ Sucesso: ${blob.size} bytes | ${url.split('/').pop()}`);
+            return blob;
+            
+        } catch (error) {
+            console.log(`❌ Erro em ${url.split('/').pop()}: ${error.message}`);
+            
+            if (tentativa < CONFIG.MAX_RETRIES && error.name !== 'AbortError') {
+                console.log(`🔄 Tentando novamente em ${CONFIG.DELAY_BETWEEN_ATTEMPTS}ms...`);
+                await delay(CONFIG.DELAY_BETWEEN_ATTEMPTS);
+                return tentarChamada(tentativa + 1);
+            }
+            
+            throw error;
+        }
+    };
+    
+    return tentarChamada();
+}
+
+// Função principal de tentativa de geração
+async function tentarGerarImagemIA(promptBase, tema) {
+    const startTime = Date.now();
+    console.log('🚀 Iniciando geração inteligente...');
+    mostrarProgresso('Preparando geração...', 5);
+    
+    // Gerar prompt estilizado
+    const { prompt, negative_prompt, estilo } = gerarPromptEstilizado(promptBase);
+    
+    // Preparar parâmetros específicos do estilo
+    const parametrosBase = {
+        ...parametrosEstilos[estilo],
+        negative_prompt: negative_prompt,
+        width: 1024,
+        height: 1024
+    };
+    
+    const chave = getAPIKey();
+    
+    // PRIORIDADE 1: Modelos Hugging Face (se tiver chave)
+    if (chave) {
+        console.log('🤖 Priorizando modelos Hugging Face...');
+        
+        for (let i = 0; i < modelosHFPrioritarios.length; i++) {
+            const modelo = modelosHFPrioritarios[i];
+            
+            try {
+                mostrarProgresso(`🤖 ${modelo.nome}...`, 20 + (i * 30));
+                console.log(`🔄 Tentando ${modelo.nome} (Conf: ${modelo.confiabilidade}/10)`);
+                
+                const parametrosFinal = {
+                    ...parametrosBase,
+                    ...modelo.parametros_customizados
+                };
+                
+                const blob = await chamarAPIHuggingFaceSeguro(modelo.url, prompt, parametrosFinal);
+                
+                if (blob && blob.size > 5000) {
+                    const tempoTotal = Date.now() - startTime;
+                    console.log(`✅ ${modelo.nome} funcionou em ${formatarTempo(tempoTotal)}!`);
+                    
+                    mostrarToast(`🎨 Imagem criada por: ${modelo.nome} (${estilo})`, 'success');
+                    
+                    // Atualizar estatísticas
+                    stats.sucessoIA++;
+                    stats.totalGerado++;
+                    stats.tempoMedio = (stats.tempoMedio + tempoTotal) / stats.sucessoIA;
+                    
+                    return blob;
+                }
+                
+            } catch (error) {
+                console.log(`❌ ${modelo.nome} falhou: ${error.message}`);
+                stats.falhasIA++;
+            }
+            
+            await delay(CONFIG.DELAY_BETWEEN_ATTEMPTS);
+        }
+    } else {
+        console.log('🔐 Sem chave HuggingFace, pulando para alternativas');
+    }
+    
+    // PRIORIDADE 2: APIs Alternativas (sem chave)
+    console.log('🆓 Tentando APIs alternativas gratuitas...');
+    
+    for (let i = 0; i < apisAlternativas.length; i++) {
+        const api = apisAlternativas[i];
+        
+        try {
+            mostrarProgresso(`🆓 ${api.nome}...`, 60 + (i * 20));
+            console.log(`🔄 Tentando ${api.nome} (Conf: ${api.confiabilidade}/10)`);
+            
+            const blob = await api.funcao(prompt);
+            
+            if (blob && blob.size > 3000) {
+                const tempoTotal = Date.now() - startTime;
+                console.log(`✅ ${api.nome} funcionou em ${formatarTempo(tempoTotal)}!`);
+                
+                mostrarToast(`🎨 Imagem criada por: ${api.nome}`, 'success');
+                
+                stats.sucessoIA++;
+                stats.totalGerado++;
+                
+                return blob;
+            }
+            
+        } catch (error) {
+            console.log(`❌ ${api.nome} falhou: ${error.message}`);
+            stats.falhasIA++;
+        }
+        
+        await delay(1000);
+    }
+    
+    // PRIORIDADE 3: Arte Local (fallback final)
+    console.log('🎨 Todas as APIs falharam, gerando arte local...');
+    mostrarProgresso('Criando arte local...', 90);
+    
+    return await gerarArteLocal(prompt, tema, estilo);
+}
+
+// ============================================================================
+// FIM PARTE 7: FUNÇÕES DE CHAMADA DE API
+// ============================================================================
+
+// ============================================================================
+// INÍCIO PARTE 8: SISTEMA DE ARTE LOCAL (FALLBACK)
+// ============================================================================
+
+// Gerar arte local usando Canvas
+async function gerarArteLocal(prompt, tema, estilo) {
+    console.log('🎨 Gerando arte local com Canvas...');
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 1024;
     const ctx = canvas.getContext('2d');
     
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Definir cores baseadas no estilo
+    const paletas = {
+        BARROCO: {
+            fundo: ['#1a0f0a', '#2d1810', '#3d251a'],
+            luz: ['#ffd700', '#ffed4e', '#fff59d'],
+            sombra: ['#000000', '#1a1a1a', '#2e2e2e']
+        },
+        RENASCENTISTA: {
+            fundo: ['#e8dcc6', '#f5e6d3', '#faf8f1'],
+            luz: ['#fff3e0', '#ffe0b2', '#ffcc80'],
+            sombra: ['#5d4037', '#6d4c41', '#795548']
+        }
+    };
     
-    // Criar arte baseada no texto do versículo
-    criarArteBasadaNoTexto(ctx, tema, versiculoAtual.texto);
+    const paleta = paletas[estilo] || paletas.BARROCO;
     
-    // Adicionar elementos temáticos
-    adicionarElementosTematicos(ctx, tema);
-    
-    // Adicionar overlay e texto
-    adicionarOverlayTexto(ctx);
-    adicionarTextoVersiculoNaImagem(ctx);
-    
-    console.log('🎨 Arte local criada baseada no versículo:', versiculoAtual.referencia);
-}
-
-function criarArteBasadaNoTexto(ctx, tema, textoVersiculo) {
-    const canvas = ctx.canvas;
-    const palavrasChave = extrairPalavrasChave(textoVersiculo);
-    
-    console.log('🔍 Palavras-chave extraídas:', palavrasChave);
-    
-    // Analisar sentimento do texto para escolher cores
-    const coresPersonalizadas = analisarSentimentoTexto(textoVersiculo, tema);
-    
-    // Criar gradiente baseado no conteúdo do versículo
-    let gradient;
-    
-    if (textoVersiculo.includes('luz') || textoVersiculo.includes('brilh') || textoVersiculo.includes('claro')) {
-        // Gradiente radiante para textos sobre luz
-        gradient = ctx.createRadialGradient(
-            canvas.width * 0.3, canvas.height * 0.2, 0,
-            canvas.width * 0.7, canvas.height * 0.8, canvas.width * 0.8
-        );
-        gradient.addColorStop(0, '#FFFACD'); // Light goldenrod
-        gradient.addColorStop(0.4, coresPersonalizadas.primaria);
-        gradient.addColorStop(0.8, coresPersonalizadas.secundaria);
-        gradient.addColorStop(1, coresPersonalizadas.terciaria);
-        
-    } else if (textoVersiculo.includes('água') || textoVersiculo.includes('rio') || textoVersiculo.includes('mar')) {
-        // Gradiente fluido para textos sobre água
-        gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-        gradient.addColorStop(0, '#E0F6FF');
-        gradient.addColorStop(0.3, '#87CEEB');
-        gradient.addColorStop(0.7, coresPersonalizadas.primaria);
-        gradient.addColorStop(1, coresPersonalizadas.secundaria);
-        
-    } else if (textoVersiculo.includes('montanha') || textoVersiculo.includes('rocha') || textoVersiculo.includes('forte')) {
-        // Gradiente sólido para textos sobre força/estabilidade
-        gradient = ctx.createLinearGradient(0, canvas.height, canvas.width, 0);
-        gradient.addColorStop(0, '#8B7355'); // Dark khaki
-        gradient.addColorStop(0.4, coresPersonalizadas.primaria);
-        gradient.addColorStop(0.8, coresPersonalizadas.secundaria);
-        gradient.addColorStop(1, '#F5F5DC'); // Beige
-        
-    } else {
-        // Gradiente padrão baseado no tema
-        gradient = ctx.createRadialGradient(
-            canvas.width / 2, canvas.height / 2, 0,
-            canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) / 2
-        );
-        gradient.addColorStop(0, coresPersonalizadas.clara);
-        gradient.addColorStop(0.5, coresPersonalizadas.primaria);
-        gradient.addColorStop(1, coresPersonalizadas.escura);
-    }
+    // Criar gradiente de fundo
+    const gradient = ctx.createRadialGradient(512, 512, 0, 512, 512, 600);
+    gradient.addColorStop(0, paleta.luz[0]);
+    gradient.addColorStop(0.5, paleta.luz[1]);
+    gradient.addColorStop(1, paleta.fundo[0]);
     
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-}
-
-function analisarSentimentoTexto(texto, tema) {
-    // Palavras que indicam diferentes sentimentos/conceitos
-    const categorias = {
-        alegria: ['alegria', 'gozo', 'regozij', 'feliz', 'contentament'],
-        esperanca: ['esper', 'futur', 'promess', 'restaur', 'renov'],
-        paz: ['paz', 'descanso', 'tranquil', 'seren', 'calm'],
-        amor: ['amor', 'misericordia', 'bondade', 'graça', 'compaixão'],
-        luz: ['luz', 'brilh', 'claro', 'illumin', 'resplandec'],
-        forca: ['forte', 'poder', 'fortale', 'vigor', 'animo'],
-        protecao: ['guard', 'proteg', 'livr', 'refugio', 'escond']
-    };
     
-    const textoLower = texto.toLowerCase();
-    let categoriaEncontrada = tema; // Default para o tema
+    // Adicionar elementos decorativos
+    ctx.globalAlpha = 0.3;
     
-    // Encontrar a categoria mais relevante no texto
-    for (const [cat, palavras] of Object.entries(categorias)) {
-        if (palavras.some(palavra => textoLower.includes(palavra))) {
-            categoriaEncontrada = cat;
-            break;
-        }
-    }
-    
-    // Paletas de cores baseadas no conteúdo detectado
-    const paletasCores = {
-        alegria: {
-            clara: '#FFF8DC', primaria: '#FFD700', secundaria: '#FFA500', 
-            terciaria: '#FF8C00', escura: '#B8860B'
-        },
-        esperanca: {
-            clara: '#F0F8FF', primaria: '#87CEEB', secundaria: '#4682B4',
-            terciaria: '#1E90FF', escura: '#191970'
-        },
-        paz: {
-            clara: '#F0FFF0', primaria: '#98FB98', secundaria: '#90EE90',
-            terciaria: '#32CD32', escura: '#006400'
-        },
-        amor: {
-            clara: '#FFF0F5', primaria: '#FFB6C1', secundaria: '#FF69B4',
-            terciaria: '#FF1493', escura: '#DC143C'
-        },
-        luz: {
-            clara: '#FFFAF0', primaria: '#FFEFD5', secundaria: '#FFE4B5',
-            terciaria: '#DEB887', escura: '#D2691E'
-        },
-        forca: {
-            clara: '#FFE4E1', primaria: '#CD5C5C', secundaria: '#B22222',
-            terciaria: '#8B0000', escura: '#800000'
-        },
-        protecao: {
-            clara: '#E6E6FA', primaria: '#DDA0DD', secundaria: '#9370DB',
-            terciaria: '#8A2BE2', escura: '#4B0082'
-        },
-        fe: {
-            clara: '#F5F5DC', primaria: '#DEB887', secundaria: '#D2B48C',
-            terciaria: '#BC9A6A', escura: '#8B7355'
-        },
-        sabedoria: {
-            clara: '#FDF5E6', primaria: '#F5DEB3', secundaria: '#DEB887',
-            terciaria: '#D2B48C', escura: '#8B7D6B'
-        }
-    };
-    
-    return paletasCores[categoriaEncontrada] || paletasCores[tema] || paletasCores.esperanca;
-}
-
-function adicionarElementosTematicos(ctx, tema) {
-    ctx.save();
-    ctx.globalAlpha = 0.15;
-    
-    // Elementos visuais baseados no tema E no conteúdo do versículo
-    const elementosPorTema = {
-        esperanca: () => adicionarRaiosEsperanca(ctx),
-        amor: () => adicionarSimbolosAmor(ctx),
-        paz: () => adicionarElementosPaz(ctx),
-        fe: () => adicionarSimbolosFe(ctx),
-        sabedoria: () => adicionarElementosSabedoria(ctx),
-        forca: () => adicionarSimbolosForca(ctx),
-        protecao: () => adicionarElementosProtecao(ctx)
-    };
-    
-    const funcaoElemento = elementosPorTema[tema] || elementosPorTema.esperanca;
-    funcaoElemento();
-    
-    // Adicionar elementos específicos baseados no texto
-    adicionarElementosBaseadosNoTexto(ctx);
-    
-    ctx.restore();
-}
-
-function adicionarElementosBaseadosNoTexto(ctx) {
-    const texto = versiculoAtual.texto.toLowerCase();
-    
-    // Detectar elementos específicos mencionados no versículo
-    if (texto.includes('estrela') || texto.includes('brilh')) {
-        desenharEstrelas(ctx, 8);
-    }
-    
-    if (texto.includes('pomba') || texto.includes('ave')) {
-        desenharPombas(ctx, 5);
-    }
-    
-    if (texto.includes('flor') || texto.includes('jardim')) {
-        desenharFlores(ctx, 6);
-    }
-    
-    if (texto.includes('coroa') || texto.includes('rei')) {
-        desenharCoroas(ctx, 3);
-    }
-    
-    if (texto.includes('espada') || texto.includes('guerra')) {
-        desenharEspadas(ctx, 4);
-    }
-}
-
-// ========== FUNÇÕES DE DESENHO ESPECÍFICAS ==========
-function adicionarRaiosEsperanca(ctx) {
-    ctx.strokeStyle = '#FFD700';
-    ctx.lineWidth = 3;
-    ctx.shadowColor = '#FFA500';
-    ctx.shadowBlur = 8;
-    
-    const centerX = ctx.canvas.width / 2;
-    const centerY = ctx.canvas.height * 0.3;
-    
+    // Raios de luz
     for (let i = 0; i < 12; i++) {
-        const angulo = (i * 30) * Math.PI / 180;
-        const raio = Math.min(ctx.canvas.width, ctx.canvas.height) * 0.35;
+        ctx.save();
+        ctx.translate(512, 200);
+        ctx.rotate((Math.PI * 2 * i) / 12);
         
+        const rayGradient = ctx.createLinearGradient(0, 0, 0, 400);
+        rayGradient.addColorStop(0, paleta.luz[0]);
+        rayGradient.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = rayGradient;
         ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.lineTo(
-            centerX + Math.cos(angulo) * raio,
-            centerY + Math.sin(angulo) * raio
-        );
-        ctx.stroke();
-    }
-}
-
-function adicionarSimbolosAmor(ctx) {
-    ctx.fillStyle = '#FFB6C1';
-    ctx.strokeStyle = '#FF69B4';
-    ctx.lineWidth = 2;
-    
-    for (let i = 0; i < 8; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        const tamanho = 15 + Math.random() * 15;
-        
-        desenharCoracao(ctx, x, y, tamanho);
-    }
-}
-
-function adicionarElementosPaz(ctx) {
-    // Ondas suaves de paz
-    ctx.strokeStyle = '#87CEEB';
-    ctx.lineWidth = 2;
-    ctx.shadowColor = '#4682B4';
-    ctx.shadowBlur = 5;
-    
-    for (let y = 100; y < ctx.canvas.height; y += 60) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        
-        for (let x = 0; x < ctx.canvas.width; x += 30) {
-            const waveY = y + Math.sin((x / 50) * Math.PI) * 10;
-            ctx.lineTo(x, waveY);
-        }
-        ctx.stroke();
-    }
-}
-
-function adicionarSimbolosFe(ctx) {
-    ctx.strokeStyle = '#9370DB';
-    ctx.fillStyle = '#DDA0DD';
-    ctx.lineWidth = 3;
-    
-    for (let i = 0; i < 6; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        const tamanho = 20;
-        
-        // Cruz
-        ctx.beginPath();
-        ctx.moveTo(x, y - tamanho);
-        ctx.lineTo(x, y + tamanho);
-        ctx.moveTo(x - tamanho/1.5, y - tamanho/2);
-        ctx.lineTo(x + tamanho/1.5, y - tamanho/2);
-        ctx.stroke();
-    }
-}
-
-function adicionarElementosSabedoria(ctx) {
-    ctx.fillStyle = '#DEB887';
-    ctx.strokeStyle = '#8B7355';
-    ctx.lineWidth = 1;
-    
-    for (let i = 0; i < 5; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        
-        // Livro
-        const w = 25, h = 18;
-        ctx.fillRect(x - w/2, y - h/2, w, h);
-        ctx.strokeRect(x - w/2, y - h/2, w, h);
-        
-        // Páginas
-        for (let j = 1; j <= 3; j++) {
-            ctx.beginPath();
-            ctx.moveTo(x - w/2 + 3, y - h/2 + j * 4);
-            ctx.lineTo(x + w/2 - 3, y - h/2 + j * 4);
-            ctx.stroke();
-        }
-    }
-}
-
-function adicionarSimbolosForca(ctx) {
-    ctx.strokeStyle = '#B22222';
-    ctx.lineWidth = 4;
-    ctx.shadowColor = '#DC143C';
-    ctx.shadowBlur = 6;
-    
-    for (let i = 0; i < 6; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        const tamanho = 25;
-        
-        // Raio de força
-        ctx.beginPath();
-        ctx.moveTo(x, y - tamanho);
-        ctx.lineTo(x - tamanho/3, y);
-        ctx.lineTo(x + tamanho/6, y);
-        ctx.lineTo(x - tamanho/3, y + tamanho);
-        ctx.lineTo(x + tamanho/3, y);
-        ctx.lineTo(x - tamanho/6, y);
-        ctx.closePath();
-        ctx.stroke();
-    }
-}
-
-function adicionarElementosProtecao(ctx) {
-    ctx.fillStyle = '#98FB98';
-    ctx.strokeStyle = '#32CD32';
-    ctx.lineWidth = 2;
-    
-    for (let i = 0; i < 4; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        const tamanho = 25;
-        
-        // Escudo
-        ctx.beginPath();
-        ctx.moveTo(x, y - tamanho);
-        ctx.lineTo(x - tamanho/2, y - tamanho/2);
-        ctx.lineTo(x - tamanho/2, y + tamanho/3);
-        ctx.lineTo(x, y + tamanho);
-        ctx.lineTo(x + tamanho/2, y + tamanho/3);
-        ctx.lineTo(x + tamanho/2, y - tamanho/2);
+        ctx.moveTo(-20, 0);
+        ctx.lineTo(20, 0);
+        ctx.lineTo(10, 400);
+        ctx.lineTo(-10, 400);
         ctx.closePath();
         ctx.fill();
-        ctx.stroke();
+        
+        ctx.restore();
     }
-}
-
-// ========== ELEMENTOS ESPECÍFICOS DO TEXTO ==========
-function desenharEstrelas(ctx, quantidade) {
-    ctx.fillStyle = '#FFD700';
-    ctx.shadowColor = '#FFA500';
-    ctx.shadowBlur = 10;
     
-    for (let i = 0; i < quantidade; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        const raio = 8 + Math.random() * 8;
-        
-        ctx.beginPath();
-        for (let j = 0; j < 5; j++) {
-            const angle = (j * 4 * Math.PI) / 5;
-            const radius = j % 2 === 0 ? raio : raio * 0.5;
-            const px = x + Math.cos(angle) * radius;
-            const py = y + Math.sin(angle) * radius;
-            
-            if (j === 0) ctx.moveTo(px, py);
-            else ctx.lineTo(px, py);
-        }
-        ctx.fill();
-    }
-}
-
-function desenharPombas(ctx, quantidade) {
-    ctx.strokeStyle = 'white';
-    ctx.fillStyle = 'rgba(255,255,255,0.8)';
-    ctx.lineWidth = 2;
+    // Adicionar texto do versículo
+    ctx.globalAlpha = 1;
+    ctx.font = 'bold 48px Georgia';
+    ctx.fillStyle = paleta.sombra[0];
+    ctx.textAlign = 'center';
+    ctx.shadowColor = paleta.luz[0];
+    ctx.shadowBlur = 20;
     
-    for (let i = 0; i < quantidade; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        
-        // Corpo da pomba
-        ctx.beginPath();
-        ctx.ellipse(x, y, 12, 8, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Asas
-        ctx.beginPath();
-        ctx.arc(x - 8, y - 3, 6, 0, Math.PI);
-        ctx.arc(x + 8, y - 3, 6, 0, Math.PI);
-        ctx.stroke();
-    }
+    const palavras = prompt.split(' ').slice(0, 5).join(' ');
+    ctx.fillText(palavras.toUpperCase(), 512, 900);
+    
+    // Converter para blob
+    return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+            console.log('✅ Arte local gerada com sucesso!');
+            mostrarToast('🎨 Arte criada localmente', 'success');
+            resolve(blob);
+        }, 'image/jpeg', 0.95);
+    });
 }
 
-function desenharFlores(ctx, quantidade) {
-    for (let i = 0; i < quantidade; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        const cores = ['#FF69B4', '#FFB6C1', '#FFA07A', '#98FB98'];
+// ============================================================================
+// FIM PARTE 8: SISTEMA DE ARTE LOCAL (FALLBACK)
+// ============================================================================
+
+// ============================================================================
+// INÍCIO PARTE 9: FUNÇÕES PRINCIPAIS DE GERAÇÃO
+// ============================================================================
+
+// Função principal para gerar versículo com IA
+async function gerarVersiculoComIA(versiculo, tema) {
+    console.log('🚀 Gerando versículo com IA...');
+    console.log(`📖 Versículo: "${versiculo.texto}"`);
+    console.log(`🎯 Tema: ${tema}`);
+    
+    try {
+        // Criar prompt base
+        const promptBase = criarPromptBase(versiculo, tema);
         
-        ctx.fillStyle = cores[Math.floor(Math.random() * cores.length)];
+        // Tentar gerar imagem
+        const imagemBlob = await tentarGerarImagemIA(promptBase, tema);
         
-        // Pétalas
-        for (let j = 0; j < 6; j++) {
-            const angle = (j * Math.PI * 2) / 6;
-            const petalX = x + Math.cos(angle) * 8;
-            const petalY = y + Math.sin(angle) * 8;
+        if (imagemBlob) {
+            // Exibir imagem
+            await exibirImagem(imagemBlob);
             
-            ctx.beginPath();
-            ctx.ellipse(petalX, petalY, 6, 3, angle, 0, Math.PI * 2);
-            ctx.fill();
+            // Salvar no histórico
+            historicoImagens.push({
+                versiculo: versiculo,
+                tema: tema,
+                timestamp: new Date().toISOString(),
+                tamanho: imagemBlob.size
+            });
+            
+            console.log('✅ Imagem gerada com IA baseada no versículo!');
+            return true;
         }
         
-        // Centro
-        ctx.fillStyle = '#FFD700';
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
-        ctx.fill();
+    } catch (error) {
+        console.error('❌ Erro ao gerar imagem:', error);
+        mostrarToast('Erro ao gerar imagem', 'error');
+        return false;
     }
 }
 
-function desenharCoroas(ctx, quantidade) {
-    ctx.fillStyle = '#FFD700';
-    ctx.strokeStyle = '#FFA500';
-    ctx.lineWidth = 1;
+// Exibir imagem na interface
+async function exibirImagem(blob) {
+    const imagemURL = URL.createObjectURL(blob);
+    const canvasImagem = document.getElementById('canvasImagem');
     
-    for (let i = 0; i < quantidade; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        const tamanho = 15;
+    if (canvasImagem) {
+        // Adicionar efeito de fade
+        canvasImagem.style.opacity = '0';
+        canvasImagem.src = imagemURL;
         
-        // Base da coroa
-        ctx.fillRect(x - tamanho, y + tamanho/2, tamanho * 2, 4);
-        
-        // Pontas da coroa
-        for (let j = 0; j < 5; j++) {
-            const pontaX = x - tamanho + (j * tamanho/2);
-            const alturas = [tamanho, tamanho * 1.5, tamanho * 2, tamanho * 1.5, tamanho];
+        canvasImagem.onload = () => {
+            canvasImagem.style.transition = 'opacity 1s';
+            canvasImagem.style.opacity = '1';
             
-            ctx.fillRect(pontaX, y + tamanho/2 - alturas[j], 3, alturas[j]);
+            // Limpar URL antiga após carregar
+            setTimeout(() => {
+                if (canvasImagem.dataset.oldSrc) {
+                    URL.revokeObjectURL(canvasImagem.dataset.oldSrc);
+                }
+                canvasImagem.dataset.oldSrc = imagemURL;
+            }, 1000);
+        };
+    }
+}
+
+// ============================================================================
+// FIM PARTE 9: FUNÇÕES PRINCIPAIS DE GERAÇÃO
+// ============================================================================
+
+// ============================================================================
+// INÍCIO PARTE 10: CARREGAMENTO DE VERSÍCULOS
+// ============================================================================
+
+// Carregar versículos do arquivo JSON
+async function carregarVersiculos() {
+    console.log('📚 Carregando versículos...');
+    
+    try {
+        const response = await fetch('versiculos.json');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
+        const data = await response.json();
+        versiculos = data.versiculos || data;
+        
+        console.log(`✅ ${versiculos.length} versículos carregados`);
+        
+        // Agrupar por tema
+        const temas = [...new Set(versiculos.map(v => v.tema))];
+        console.log(`📚 Temas disponíveis: ${temas.join(', ')}`);
+        
+        // Popular dropdown de temas se existir
+        popularTemas(temas);
+        
+        // Gerar primeiro versículo automaticamente
+        if (versiculos.length > 0) {
+            await gerarNovoVersiculo();
+        }
+        
+    } catch (error) {
+        console.error('❌ Erro ao carregar versículos:', error);
+        
+        // Usar versículos de fallback
+        versiculos = obterVersiculosFallback();
+        console.log('📚 Usando versículos de fallback');
+        
+        await gerarNovoVersiculo();
     }
 }
 
-function desenharEspadas(ctx, quantidade) {
-    ctx.fillStyle = '#C0C0C0';
-    ctx.strokeStyle = '#808080';
-    ctx.lineWidth = 2;
+// Popular dropdown de temas
+function popularTemas(temas) {
+    const selectTema = document.getElementById('temaEscolhido');
     
-    for (let i = 0; i < quantidade; i++) {
-        const x = Math.random() * ctx.canvas.width;
-        const y = Math.random() * ctx.canvas.height;
-        const comprimento = 30;
+    if (selectTema && temas.length > 0) {
+        selectTema.innerHTML = '<option value="">Todos os temas</option>';
         
-        // Lâmina
-        ctx.fillRect(x - 2, y - comprimento, 4, comprimento);
-        
-        // Guarda
-        ctx.fillRect(x - 8, y - 5, 16, 3);
-        
-        // Punho
-        ctx.fillStyle = '#8B4513';
-        ctx.fillRect(x - 2, y, 4, 10);
-        
-        // Pomo
-        ctx.beginPath();
-        ctx.arc(x, y + 12, 3, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.fillStyle = '#C0C0C0'; // Reset cor
+        temas.forEach(tema => {
+            const option = document.createElement('option');
+            option.value = tema;
+            option.textContent = tema.charAt(0).toUpperCase() + tema.slice(1);
+            selectTema.appendChild(option);
+        });
     }
 }
 
-function desenharCoracao(ctx, x, y, tamanho) {
-    ctx.save();
-    ctx.translate(x, y);
-    
-    ctx.beginPath();
-    // Lado esquerdo do coração
-    ctx.arc(-tamanho/4, -tamanho/4, tamanho/4, 0, Math.PI * 2);
-    // Lado direito do coração
-    ctx.arc(tamanho/4, -tamanho/4, tamanho/4, 0, Math.PI * 2);
-    
-    ctx.fill();
-    
-    // Parte inferior do coração
-    ctx.beginPath();
-    ctx.moveTo(0, tamanho/4);
-    ctx.lineTo(-tamanho/2, -tamanho/8);
-    ctx.lineTo(tamanho/2, -tamanho/8);
-    ctx.lineTo(0, tamanho/4);
-    ctx.fill();
-    
-    ctx.restore();
+// Obter versículos de fallback
+function obterVersiculosFallback() {
+    return [
+        {
+            texto: "Porque eu bem sei os pensamentos que tenho a vosso respeito, diz o Senhor; pensamentos de paz, e não de mal, para vos dar o fim que esperais.",
+            referencia: "Jeremias 29:11",
+            tema: "esperanca"
+        },
+        {
+            texto: "Confia no Senhor de todo o teu coração, e não te estribes no teu próprio entendimento.",
+            referencia: "Provérbios 3:5",
+            tema: "fe"
+        },
+        {
+            texto: "O Senhor é o meu pastor, nada me faltará.",
+            referencia: "Salmos 23:1",
+            tema: "paz"
+        }
+    ];
 }
 
-// ========== SISTEMA DE OVERLAY E TEXTO ==========
-function adicionarOverlayTexto(ctx) {
-    const posicao = document.getElementById('posicaoTexto').value;
-    const opacidade = parseFloat(document.getElementById('opacidadeFundo').value);
+// ============================================================================
+// FIM PARTE 10: CARREGAMENTO DE VERSÍCULOS
+// ============================================================================
+
+// ============================================================================
+// INÍCIO PARTE 11: GERAÇÃO E MANIPULAÇÃO DE VERSÍCULOS
+// ============================================================================
+
+// Gerar novo versículo
+async function gerarNovoVersiculo() {
+    console.log('🎲 Gerando novo versículo...');
     
-    const canvas = ctx.canvas;
-    let overlayY, overlayHeight;
+    const temaEscolhido = document.getElementById('temaEscolhido')?.value || '';
     
-    // Definir área do overlay baseado na posição
-    switch(posicao) {
-        case 'superior':
-            overlayY = 0;
-            overlayHeight = canvas.height * 0.6;
-            break;
-        case 'centro':
-            overlayY = canvas.height * 0.2;
-            overlayHeight = canvas.height * 0.6;
-            break;
-        case 'inferior':
-        default:
-            overlayY = canvas.height * 0.4;
-            overlayHeight = canvas.height * 0.6;
-            break;
+    // Filtrar por tema se selecionado
+    let versiculosDisponiveis = versiculos;
+    if (temaEscolhido) {
+        versiculosDisponiveis = versiculos.filter(v => v.tema === temaEscolhido);
+        console.log(`🎯 Filtrando por tema: ${temaEscolhido}`);
     }
     
-    // Criar gradiente para overlay suave
-    const gradient = ctx.createLinearGradient(0, overlayY, 0, overlayY + overlayHeight);
-    
-    if (posicao === 'superior') {
-        gradient.addColorStop(0, `rgba(0,0,0,${opacidade})`);
-        gradient.addColorStop(0.6, `rgba(0,0,0,${opacidade * 0.4})`);
-        gradient.addColorStop(1, 'rgba(0,0,0,0)');
-    } else if (posicao === 'inferior') {
-        gradient.addColorStop(0, 'rgba(0,0,0,0)');
-        gradient.addColorStop(0.4, `rgba(0,0,0,${opacidade * 0.4})`);
-        gradient.addColorStop(1, `rgba(0,0,0,${opacidade})`);
+    // Escolher versículo aleatório
+    if (versiculosDisponiveis.length > 0) {
+        const indice = Math.floor(Math.random() * versiculosDisponiveis.length);
+        versiculoAtual = versiculosDisponiveis[indice];
+        temaAtual = versiculoAtual.tema;
+        
+        console.log(`📖 Versículo escolhido: ${versiculoAtual.referencia}`);
+        
+        // Atualizar interface
+        atualizarInterface();
+        
+        // Gerar imagem com IA
+        await gerarVersiculoComIA(versiculoAtual, temaAtual);
     } else {
-        // Centro - overlay mais suave
-        gradient.addColorStop(0, `rgba(0,0,0,${opacidade * 0.2})`);
-        gradient.addColorStop(0.3, `rgba(0,0,0,${opacidade})`);
-        gradient.addColorStop(0.7, `rgba(0,0,0,${opacidade})`);
-        gradient.addColorStop(1, `rgba(0,0,0,${opacidade * 0.2})`);
+        console.log('⚠️ Nenhum versículo disponível para o tema selecionado');
+        mostrarToast('Nenhum versículo encontrado para este tema', 'error');
     }
-    
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, overlayY, canvas.width, overlayHeight);
 }
 
-function adicionarTextoVersiculoNaImagem(ctx) {
+// Atualizar interface com versículo atual
+function atualizarInterface() {
     if (!versiculoAtual) return;
     
-    const canvas = ctx.canvas;
-    const posicao = document.getElementById('posicaoTexto').value;
+    const elementoTexto = document.getElementById('versiculoTexto');
+    const elementoReferencia = document.getElementById('versiculoReferencia');
     
-    // Configurar estilo do texto
-    ctx.fillStyle = 'white';
-    ctx.strokeStyle = 'rgba(0,0,0,0.8)';
-    ctx.lineWidth = 3;
-    ctx.textAlign = 'center';
-    ctx.shadowColor = 'rgba(0,0,0,0.9)';
-    ctx.shadowBlur = 8;
-    ctx.shadowOffsetX = 2;
-    ctx.shadowOffsetY = 2;
-    
-    // Definir posição base do texto
-    let yBase;
-    switch(posicao) {
-        case 'superior':
-            yBase = canvas.height * 0.3;
-            break;
-        case 'centro':
-            yBase = canvas.height * 0.5;
-            break;
-        case 'inferior':
-        default:
-            yBase = canvas.height * 0.75;
-            break;
+    if (elementoTexto) {
+        elementoTexto.textContent = versiculoAtual.texto;
+        elementoTexto.style.opacity = '0';
+        setTimeout(() => {
+            elementoTexto.style.transition = 'opacity 1s';
+            elementoTexto.style.opacity = '1';
+        }, 100);
     }
     
-    // Configurar fonte para o versículo principal
-    const tamanhoFonteBase = Math.min(canvas.width / 25, 32);
-    ctx.font = `bold ${tamanhoFonteBase}px "Georgia", "Times New Roman", serif`;
-    
-    // Quebrar texto em linhas inteligentemente
-    const texto = versiculoAtual.texto;
-    const larguraMaxima = canvas.width - 80;
-    const linhas = quebrarTextoInteligente(ctx, texto, larguraMaxima);
-    
-    // Calcular espaçamento e posição inicial
-    const alturaLinha = tamanhoFonteBase * 1.3;
-    const alturaTotal = linhas.length * alturaLinha;
-    const yInicial = yBase - (alturaTotal / 2);
-    
-    // Desenhar cada linha do versículo
-    linhas.forEach((linha, index) => {
-        const y = yInicial + (index * alturaLinha);
-        
-        // Contorno (stroke) primeiro
-        ctx.strokeText(linha, canvas.width / 2, y);
-        // Texto preenchido por cima
-        ctx.fillText(linha, canvas.width / 2, y);
-    });
-    
-    // Configurar fonte para a referência
-    const tamanhoFonteRef = Math.min(canvas.width / 30, 26);
-    ctx.font = `italic bold ${tamanhoFonteRef}px "Georgia", "Times New Roman", serif`;
-    
-    // Posicionar referência
-    const yReferencia = yInicial + alturaTotal + (tamanhoFonteRef * 1.5);
-    const textoReferencia = `— ${versiculoAtual.referencia}`;
-    
-    // Desenhar referência
-    ctx.strokeText(textoReferencia, canvas.width / 2, yReferencia);
-    ctx.fillText(textoReferencia, canvas.width / 2, yReferencia);
-    
-    // Limpar efeitos de sombra
-    ctx.shadowColor = 'transparent';
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
+    if (elementoReferencia) {
+        elementoReferencia.textContent = versiculoAtual.referencia;
+    }
 }
 
-function quebrarTextoInteligente(ctx, texto, larguraMax) {
-    const palavras = texto.split(' ');
-    const linhas = [];
-    let linhaAtual = '';
-    
-    for (let palavra of palavras) {
-        const testeLinha = linhaAtual + (linhaAtual ? ' ' : '') + palavra;
-        const larguraTeste = ctx.measureText(testeLinha).width;
-        
-        if (larguraTeste > larguraMax && linhaAtual) {
-            linhas.push(linhaAtual.trim());
-            linhaAtual = palavra;
-        } else {
-            linhaAtual = testeLinha;
-        }
-    }
-    
-    if (linhaAtual) {
-        linhas.push(linhaAtual.trim());
-    }
-    
-    // Limitar número de linhas para não sobrecarregar a imagem
-    if (linhas.length > 4) {
-        // Se muito longo, tentar quebrar de forma mais agressiva
-        return quebrarTextoAgressivo(ctx, texto, larguraMax, 4);
-    }
-    
-    return linhas;
-}
+// ============================================================================
+// FIM PARTE 11: GERAÇÃO E MANIPULAÇÃO DE VERSÍCULOS
+// ============================================================================
 
-function quebrarTextoAgressivo(ctx, texto, larguraMax, maxLinhas) {
-    const palavras = texto.split(' ');
-    const linhas = [];
-    let linhaAtual = '';
-    
-    for (let palavra of palavras) {
-        if (linhas.length >= maxLinhas - 1) {
-            // Última linha - adicionar tudo que resta
-            linhaAtual += (linhaAtual ? ' ' : '') + palavra;
-        } else {
-            const testeLinha = linhaAtual + (linhaAtual ? ' ' : '') + palavra;
-            const larguraTeste = ctx.measureText(testeLinha).width;
-            
-            if (larguraTeste > larguraMax && linhaAtual) {
-                linhas.push(linhaAtual.trim());
-                linhaAtual = palavra;
-            } else {
-                linhaAtual = testeLinha;
-            }
-        }
-    }
-    
-    if (linhaAtual) {
-        // Se a última linha ainda é muito longa, encurtar com reticências
-        if (ctx.measureText(linhaAtual).width > larguraMax) {
-            while (ctx.measureText(linhaAtual + '...').width > larguraMax && linhaAtual.length > 10) {
-                linhaAtual = linhaAtual.substring(0, linhaAtual.length - 1);
-            }
-            linhaAtual += '...';
-        }
-        linhas.push(linhaAtual.trim());
-    }
-    
-    return linhas;
-}
+// ============================================================================
+// INÍCIO PARTE 12: SISTEMA DE COMPARTILHAMENTO
+// ============================================================================
 
-// ========== FUNCIONALIDADES DE COMPARTILHAMENTO ==========
-function baixarImagem() {
-    if (!versiculoAtual) {
-        mostrarToast('❌ Nenhuma imagem para baixar', 'error');
-        return;
-    }
+// Compartilhar versículo
+async function compartilharVersiculo() {
+    if (!versiculoAtual) return;
     
     const canvas = document.getElementById('canvasImagem');
-    const link = document.createElement('a');
+    const textoCompleto = `${versiculoAtual.texto}\n- ${versiculoAtual.referencia}`;
     
-    // Nome do arquivo baseado no versículo
-    const referenciaLimpa = versiculoAtual.referencia
-        .replace(/[^a-zA-Z0-9]/g, '_')
-        .toLowerCase();
-    
-    const timestamp = new Date().toISOString().slice(0, 10);
-    const nomeArquivo = `versiculo_${referenciaLimpa}_${timestamp}.png`;
-    
-    link.download = nomeArquivo;
-    link.href = canvas.toDataURL('image/png', 1.0);
-    
-    // Trigger download
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    mostrarToast('💾 Imagem baixada com sucesso!');
-    
-    // Analytics local
-    incrementarContadorDownload();
-}
-
-function compartilharWhatsApp() {
-    if (!versiculoAtual) {
-        mostrarToast('❌ Nenhum versículo para compartilhar', 'error');
-        return;
-    }
-    
-    const emoji = obterEmojiTema(document.getElementById('temaEscolhido').value);
-    const texto = `${emoji} *${versiculoAtual.referencia}*\n\n"_${versiculoAtual.texto}_"\n\n✨ Imagem gerada com IA em: ${window.location.href}\n\n#VersiculoBiblico #Fe #Esperanca`;
-    
-    const urlWhatsApp = `https://wa.me/?text=${encodeURIComponent(texto)}`;
-    
-    // Abrir em nova aba
-    const janela = window.open(urlWhatsApp, '_blank');
-    
-    if (janela) {
-        mostrarToast('📱 Abrindo WhatsApp para compartilhar...');
-    } else {
-        mostrarToast('⚠️ Pop-up bloqueado. Permita pop-ups para compartilhar.', 'warning');
-    }
-    
-    incrementarContadorCompartilhamento('whatsapp');
-}
-
-function compartilharFacebook() {
-    if (!versiculoAtual) {
-        mostrarToast('❌ Nenhum versículo para compartilhar', 'error');
-        return;
-    }
-    
-    const textoCompartilhar = `"${versiculoAtual.texto}" - ${versiculoAtual.referencia}`;
-    const urlAtual = encodeURIComponent(window.location.href);
-    const textoEncoded = encodeURIComponent(textoCompartilhar);
-    
-    const urlFacebook = `https://www.facebook.com/sharer/sharer.php?u=${urlAtual}&quote=${textoEncoded}`;
-    
-    const janela = window.open(urlFacebook, '_blank', 'width=600,height=400,scrollbars=yes,resizable=yes');
-    
-    if (janela) {
-        mostrarToast('📘 Abrindo Facebook para compartilhar...');
-    } else {
-        mostrarToast('⚠️ Pop-up bloqueado. Permita pop-ups para compartilhar.', 'warning');
-    }
-    
-    incrementarContadorCompartilhamento('facebook');
-}
-
-function copiarTexto() {
-    if (!versiculoAtual) {
-        mostrarToast('❌ Nenhum versículo para copiar', 'error');
-        return;
-    }
-    
-    const emoji = obterEmojiTema(document.getElementById('temaEscolhido').value);
-    const textoCompleto = `${emoji} ${versiculoAtual.referencia}\n\n"${versiculoAtual.texto}"\n\n✨ Gerado com IA em: ${window.location.href}`;
-    
-    // Tentar usar a API moderna
-    if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(textoCompleto)
-            .then(() => {
-                mostrarToast('📋 Texto copiado para área de transferência!');
-            })
-            .catch(() => {
-                copiarTextoFallback(textoCompleto);
-            });
-    } else {
-        copiarTextoFallback(textoCompleto);
-    }
-    
-    incrementarContadorCompartilhamento('copia');
-}
-
-function copiarTextoFallback(texto) {
-    try {
-        const textarea = document.createElement('textarea');
-        textarea.value = texto;
-        textarea.style.position = 'fixed';
-        textarea.style.opacity = '0';
-        textarea.style.pointerEvents = 'none';
-        
-        document.body.appendChild(textarea);
-        textarea.focus();
-        textarea.select();
-        
-        const sucesso = document.execCommand('copy');
-        document.body.removeChild(textarea);
-        
-        if (sucesso) {
-            mostrarToast('📋 Texto copiado!');
-        } else {
-            mostrarToast('❌ Erro ao copiar. Selecione o texto manualmente.', 'error');
-            console.log('Texto para copiar:', texto);
-        }
-    } catch (error) {
-        mostrarToast('❌ Erro ao copiar texto.', 'error');
-        console.error('Erro na cópia:', error);
-    }
-}
-
-// ========== SISTEMA DE NOTIFICAÇÕES E UTILITÁRIOS ==========
-function mostrarToast(mensagem, tipo = 'success') {
-    const toast = document.getElementById('toast');
-    
-    // Definir classe baseada no tipo
-    toast.className = `toast show ${tipo}`;
-    toast.textContent = mensagem;
-    
-    // Auto ocultar após 3 segundos
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
-    
-    // Log para debug
-    console.log(`📢 ${tipo.toUpperCase()}: ${mensagem}`);
-}
-
-function obterEmojiTema(tema) {
-    const emojis = {
-        esperanca: '✨',
-        amor: '❤️',
-        paz: '🕊️',
-        fe: '🙏',
-        sabedoria: '🦉',
-        forca: '💪',
-        protecao: '🛡️'
-    };
-    return emojis[tema] || '📖';
-}
-
-// ========== SISTEMA DE CONTADORES E ANALYTICS ==========
-function incrementarContador() {
-    const contador = parseInt(localStorage.getItem('contador_total') || '0') + 1;
-    localStorage.setItem('contador_total', contador);
-    
-    // Contador por tema
-    const tema = document.getElementById('temaEscolhido').value;
-    const contadorTema = parseInt(localStorage.getItem(`contador_${tema}`) || '0') + 1;
-    localStorage.setItem(`contador_${tema}`, contadorTema);
-    
-    // Atualizar display
-    atualizarContadores();
-    
-    // Salvar timestamp da última geração
-    localStorage.setItem('ultima_geracao', new Date().toISOString());
-}
-
-function incrementarContadorDownload() {
-    const downloads = parseInt(localStorage.getItem('contador_downloads') || '0') + 1;
-    localStorage.setItem('contador_downloads', downloads);
-}
-
-function incrementarContadorCompartilhamento(tipo) {
-    const compartilhamentos = parseInt(localStorage.getItem(`contador_share_${tipo}`) || '0') + 1;
-    localStorage.setItem(`contador_share_${tipo}`, compartilhamentos);
-}
-
-function atualizarContadores() {
-    const contadorTotal = localStorage.getItem('contador_total') || '0';
-    const downloads = localStorage.getItem('contador_downloads') || '0';
-    
-    const elemento = document.getElementById('contadorVersiculos');
-    if (elemento) {
-        elemento.innerHTML = `
-            ${contadorTotal} imagens geradas | ${downloads} downloads
-        `;
-    }
-    
-    // Atualizar título da página se muitas gerações
-    if (parseInt(contadorTotal) > 0) {
-        document.title = `Versículos Bíblicos IA (${contadorTotal}) - Gerador`;
-    }
-}
-
-// ========== FUNÇÕES DE INICIALIZAÇÃO FINAL ==========
-function inicializarEstatisticas() {
-    // Mostrar estatísticas de uso se disponível
-    const contadorTotal = localStorage.getItem('contador_total');
-    const ultimaGeracao = localStorage.getItem('ultima_geracao');
-    
-    if (contadorTotal && parseInt(contadorTotal) > 0) {
-        console.log(`📊 Estatísticas: ${contadorTotal} imagens geradas`);
-        
-        if (ultimaGeracao) {
-            const dataUltima = new Date(ultimaGeracao);
-            const agora = new Date();
-            const diasDesdeUltima = Math.floor((agora - dataUltima) / (1000 * 60 * 60 * 24));
+    // Tentar Web Share API
+    if (navigator.share && canvas) {
+        try {
+            // Converter imagem para blob
+            const response = await fetch(canvas.src);
+            const blob = await response.blob();
+            const file = new File([blob], 'versiculo.png', { type: 'image/png' });
             
-            if (diasDesdeUltima > 7) {
-                mostrarToast(`👋 Bem-vindo de volta! Última visita: ${diasDesdeUltima} dias atrás`, 'info');
-            }
+            await navigator.share({
+                title: 'Versículo do Dia',
+                text: textoCompleto,
+                files: [file]
+            });
+            
+            console.log('✅ Compartilhado com sucesso!');
+            mostrarToast('Compartilhado com sucesso!', 'success');
+            
+        } catch (error) {
+            console.log('❌ Erro ao compartilhar:', error);
+            copiarTextoParaClipboard(textoCompleto);
         }
+    } else {
+        // Fallback: copiar para clipboard
+        copiarTextoParaClipboard(textoCompleto);
     }
 }
 
-// ========== INICIALIZAÇÃO FINAL ==========
-document.addEventListener('DOMContentLoaded', function() {
-    // Executar inicializações se ainda não foram feitas
-    if (typeof versiculos === 'undefined' || Object.keys(versiculos).length === 0) {
-        carregarVersiculos();
+// Copiar texto para clipboard
+function copiarTextoParaClipboard(texto) {
+    navigator.clipboard.writeText(texto).then(() => {
+        console.log('📋 Texto copiado para clipboard');
+        mostrarToast('Texto copiado!', 'success');
+    }).catch(error => {
+        console.error('❌ Erro ao copiar:', error);
+        mostrarToast('Erro ao copiar texto', 'error');
+    });
+}
+
+// Baixar imagem
+function baixarImagem() {
+    const canvas = document.getElementById('canvasImagem');
+    
+    if (canvas && canvas.src) {
+        const link = document.createElement('a');
+        link.download = `versiculo_${Date.now()}.png`;
+        link.href = canvas.src;
+        link.click();
+        
+        console.log('⬇️ Download iniciado');
+        mostrarToast('Download iniciado!', 'success');
+    }
+}
+
+// ============================================================================
+// FIM PARTE 12: SISTEMA DE COMPARTILHAMENTO
+// ============================================================================
+
+// ============================================================================
+// INÍCIO PARTE 13: EVENTOS E INICIALIZAÇÃO
+// ============================================================================
+
+// Configurar eventos
+function configurarEventos() {
+    console.log('⚙️ Configurando eventos...');
+    
+    // Botão gerar versículo
+    const btnGerar = document.getElementById('gerarVersiculo');
+    if (btnGerar) {
+        btnGerar.addEventListener('click', async () => {
+            btnGerar.disabled = true;
+            btnGerar.textContent = 'Gerando...';
+            
+            await gerarNovoVersiculo();
+            
+            btnGerar.disabled = false;
+            btnGerar.textContent = 'Gerar Novo Versículo';
+        });
     }
     
-    if (!document.getElementById('gerarVersiculo').onclick) {
-        configurarEventListeners();
+    // Mudança de tema
+    const selectTema = document.getElementById('temaEscolhido');
+    if (selectTema) {
+        selectTema.addEventListener('change', async () => {
+            console.log(`🎯 Tema alterado para: ${selectTema.value}`);
+            await gerarNovoVersiculo();
+        });
     }
     
-    // Inicializar estatísticas
-    inicializarEstatisticas();
-    atualizarContadores();
+    // Botões de compartilhamento
+    const btnCompartilhar = document.getElementById('compartilhar');
+    if (btnCompartilhar) {
+        btnCompartilhar.addEventListener('click', compartilharVersiculo);
+    }
     
-    // Log de inicialização
+    const btnBaixar = document.getElementById('baixar');
+    if (btnBaixar) {
+        btnBaixar.addEventListener('click', baixarImagem);
+    }
+    
+    // Atalhos de teclado
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            gerarNovoVersiculo();
+        }
+        if (e.key === 's' && e.ctrlKey) {
+            e.preventDefault();
+            baixarImagem();
+        }
+    });
+}
+
+// Verificar elementos do DOM
+function verificarElementosDOM() {
+    console.log('📄 Verificando elementos do DOM...');
+    
+    const elementosNecessarios = [
+        'temaEscolhido',
+        'versiculoTexto',
+        'versiculoReferencia',
+        'gerarVersiculo',
+        'canvasImagem'
+    ];
+    
+    elementosNecessarios.forEach(id => {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            console.log(`✅ ${id}: ENCONTRADO`);
+        } else {
+            console.log(`❌ ${id}: NÃO ENCONTRADO`);
+        }
+    });
+}
+
+// Inicialização principal
+async function inicializarSistema() {
+    console.log('🔍 INICIANDO DEBUG...');
+    console.log('✅ Script de Versículos IA carregado completamente!');
+    
+    verificarElementosDOM();
+    
+    console.log('✅ Variável versiculos: DEFINIDA');
+    console.log(`📚 Temas disponíveis: []`);
+    console.log(`🎯 versiculoAtual: ${versiculoAtual}`);
+    
+    configurarEventos();
+    
+    // Verificar chave API
+    const chaveValida = await verificarChaveAPI();
+    if (chaveValida) {
+        console.log('🔑 Chave API válida e pronta para uso');
+    } else {
+        console.log('⚠️ Usando apenas APIs gratuitas');
+    }
+    
+    // Carregar versículos
+    await carregarVersiculos();
+    
+    console.log('📊 Estatísticas:', stats.totalGerado, 'imagens geradas');
     console.log('🚀 Sistema de Versículos com IA inicializado completamente!');
     console.log('💡 Funcionalidades: Geração IA, Fallback Artístico, Compartilhamento, Analytics');
-});
+}
 
-// ========== DETECTAR PROBLEMAS E FALLBACKS ==========
-window.addEventListener('error', function(evento) {
-    console.error('💥 Erro detectado:', evento.error);
-    mostrarToast('⚠️ Erro detectado. Tentando modo alternativo...', 'warning');
-    
-    // Se houver erro crítico, tentar recarregar funcionalidades básicas
-    setTimeout(() => {
-        if (versiculoAtual && document.getElementById('canvasImagem')) {
-            gerarImagemArtisticaLocal(document.getElementById('temaEscolhido').value);
-        }
-    }, 1000);
-});
+// Event listener principal
+document.addEventListener('DOMContentLoaded', inicializarSistema);
 
-// Log final de carregamento
-console.log('✅ Script de Versículos IA carregado completamente!');
+// Exportar funções para debug no console
+window.debugFunctions = {
+    definirChave: definirChaveManualmente,
+    verificarChave: verificarChaveAPI,
+    gerarVersiculo: gerarNovoVersiculo,
+    stats: () => console.table(stats),
+    limparCache: () => {
+        localStorage.clear();
+        console.log('🧹 Cache limpo');
+    }
+};
+
+console.log('💡 Dica: Use window.debugFunctions para acessar funções de debug');
+
+// ============================================================================
+// FIM PARTE 13: EVENTOS E INICIALIZAÇÃO
+// ============================================================================
+
+// ============================================================================
+// FIM DO ARQUIVO SCRIPT.JS
+// ============================================================================
