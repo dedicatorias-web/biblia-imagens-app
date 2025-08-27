@@ -138,30 +138,62 @@ const elementosHistoricos = {
 // INÍCIO PARTE 3: MODELOS DE IA E PARÂMETROS
 // ============================================================================
 
-// Modelos Hugging Face ATUALIZADOS E FUNCIONAIS (Dezembro 2024)
+// ============================================================================
+// MEGA BIBLIOTECA DE MODELOS HUGGING FACE (30+ MODELOS)
+// ============================================================================
+
 const modelosHFPrioritarios = [
-    {
-        nome: "Stable Diffusion XL Base",
-        url: "stabilityai/stable-diffusion-xl-base-1.0",
-        categoria: "alta",
-        confiabilidade: 9,
-        tempo_estimado: "30-50s",
-        parametros_customizados: {
-            num_inference_steps: 25,
-            guidance_scale: 7.5,
-            width: 1024,
-            height: 1024
-        }
-    },
+    // === MODELOS BASE STABLE DIFFUSION ===
     {
         nome: "RunwayML SD 1.5",
         url: "runwayml/stable-diffusion-v1-5",
-        categoria: "rapida",
-        confiabilidade: 8,
+        categoria: "base",
+        confiabilidade: 10,
         tempo_estimado: "15-30s",
         parametros_customizados: {
-            num_inference_steps: 20,
+            num_inference_steps: 25,
             guidance_scale: 7.5,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "CompVis SD 1.4",
+        url: "CompVis/stable-diffusion-v1-4",
+        categoria: "base",
+        confiabilidade: 9,
+        tempo_estimado: "15-25s",
+        parametros_customizados: {
+            num_inference_steps: 20,
+            guidance_scale: 7,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "Stable Diffusion 2.1 Base",
+        url: "stabilityai/stable-diffusion-2-1-base",
+        categoria: "base",
+        confiabilidade: 8,
+        tempo_estimado: "20-35s",
+        parametros_customizados: {
+            num_inference_steps: 30,
+            guidance_scale: 8,
+            width: 768,
+            height: 768
+        }
+    },
+    
+    // === MODELOS ARTÍSTICOS ===
+    {
+        nome: "Dreamlike Diffusion",
+        url: "dreamlike-art/dreamlike-diffusion-1.0",
+        categoria: "artistico",
+        confiabilidade: 9,
+        tempo_estimado: "20-30s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 8,
             width: 512,
             height: 512
         }
@@ -169,20 +201,48 @@ const modelosHFPrioritarios = [
     {
         nome: "Dreamlike Photoreal",
         url: "dreamlike-art/dreamlike-photoreal-2.0",
-        categoria: "realista",
-        confiabilidade: 7,
-        tempo_estimado: "20-35s",
+        categoria: "fotorealista",
+        confiabilidade: 8,
+        tempo_estimado: "25-35s",
         parametros_customizados: {
-            num_inference_steps: 25,
-            guidance_scale: 8,
+            num_inference_steps: 30,
+            guidance_scale: 8.5,
             width: 768,
             height: 768
         }
     },
     {
-        nome: "CompVis SD 1.4",
-        url: "CompVis/stable-diffusion-v1-4",
-        categoria: "classica",
+        nome: "OpenJourney",
+        url: "prompthero/openjourney",
+        categoria: "artistico",
+        confiabilidade: 8,
+        tempo_estimado: "15-25s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 7,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "Midjourney V4 Style",
+        url: "prompthero/midjourney-v4-diffusion",
+        categoria: "artistico",
+        confiabilidade: 7,
+        tempo_estimado: "20-30s",
+        parametros_customizados: {
+            num_inference_steps: 30,
+            guidance_scale: 7.5,
+            width: 512,
+            height: 512
+        }
+    },
+    
+    // === MODELOS ANIME/CARTOON ===
+    {
+        nome: "Anything V5",
+        url: "stablediffusionapi/anything-v5",
+        categoria: "anime",
         confiabilidade: 8,
         tempo_estimado: "15-25s",
         parametros_customizados: {
@@ -191,8 +251,374 @@ const modelosHFPrioritarios = [
             width: 512,
             height: 512
         }
+    },
+    {
+        nome: "Waifu Diffusion",
+        url: "hakurei/waifu-diffusion",
+        categoria: "anime",
+        confiabilidade: 7,
+        tempo_estimado: "20-30s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 7.5,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "Anime Pastel Dream",
+        url: "stablediffusionapi/anime-pastel-dream",
+        categoria: "anime",
+        confiabilidade: 7,
+        tempo_estimado: "15-25s",
+        parametros_customizados: {
+            num_inference_steps: 20,
+            guidance_scale: 6.5,
+            width: 512,
+            height: 512
+        }
+    },
+    
+    // === MODELOS REALISTAS ===
+    {
+        nome: "Realistic Vision V5",
+        url: "stablediffusionapi/realistic-vision-v5",
+        categoria: "fotorealista",
+        confiabilidade: 9,
+        tempo_estimado: "25-40s",
+        parametros_customizados: {
+            num_inference_steps: 30,
+            guidance_scale: 8,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "CyberRealistic",
+        url: "stablediffusionapi/cyberrealistic",
+        categoria: "fotorealista",
+        confiabilidade: 8,
+        tempo_estimado: "25-35s",
+        parametros_customizados: {
+            num_inference_steps: 28,
+            guidance_scale: 7.5,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "Photorealistic Stock",
+        url: "stablediffusionapi/photorealistic-stock-v2",
+        categoria: "fotorealista",
+        confiabilidade: 7,
+        tempo_estimado: "20-30s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 7,
+            width: 512,
+            height: 512
+        }
+    },
+    
+    // === MODELOS PINTURAS CLÁSSICAS ===
+    {
+        nome: "Classic Animation",
+        url: "stablediffusionapi/classic-anim-diffusion",
+        categoria: "classico",
+        confiabilidade: 7,
+        tempo_estimado: "15-25s",
+        parametros_customizados: {
+            num_inference_steps: 20,
+            guidance_scale: 7,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "Van Gogh Diffusion",
+        url: "dallinmackay/Van-Gogh-diffusion",
+        categoria: "artistico",
+        confiabilidade: 7,
+        tempo_estimado: "20-30s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 7.5,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "Oil Painting Style",
+        url: "stablediffusionapi/oil-painting-style",
+        categoria: "classico",
+        confiabilidade: 6,
+        tempo_estimado: "20-30s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 8,
+            width: 512,
+            height: 512
+        }
+    },
+    
+    // === MODELOS FANTASIA/SCI-FI ===
+    {
+        nome: "Fantasy Mix",
+        url: "stablediffusionapi/fantasy-mix",
+        categoria: "fantasia",
+        confiabilidade: 7,
+        tempo_estimado: "20-30s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 7.5,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "Epic Diffusion",
+        url: "stablediffusionapi/epic-diffusion",
+        categoria: "fantasia",
+        confiabilidade: 7,
+        tempo_estimado: "25-35s",
+        parametros_customizados: {
+            num_inference_steps: 28,
+            guidance_scale: 8,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "Sci-Fi Diffusion",
+        url: "stablediffusionapi/sci-fi-diffusion",
+        categoria: "scifi",
+        confiabilidade: 6,
+        tempo_estimado: "20-30s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 7,
+            width: 512,
+            height: 512
+        }
+    },
+    
+    // === MODELOS ESTILIZADOS ===
+    {
+        nome: "Cartoon Diffusion",
+        url: "stablediffusionapi/cartoon-diffusion",
+        categoria: "cartoon",
+        confiabilidade: 7,
+        tempo_estimado: "15-25s",
+        parametros_customizados: {
+            num_inference_steps: 20,
+            guidance_scale: 6.5,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "Comic Diffusion",
+        url: "stablediffusionapi/comic-diffusion",
+        categoria: "cartoon",
+        confiabilidade: 6,
+        tempo_estimado: "15-25s",
+        parametros_customizados: {
+            num_inference_steps: 20,
+            guidance_scale: 7,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "3D Cartoon Style",
+        url: "stablediffusionapi/3d-cartoon-diffusion",
+        categoria: "cartoon",
+        confiabilidade: 6,
+        tempo_estimado: "20-30s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 7.5,
+            width: 512,
+            height: 512
+        }
+    },
+    
+    // === MODELOS ARQUITETURA/DESIGN ===
+    {
+        nome: "Architecture Style",
+        url: "stablediffusionapi/architecture-diffusion",
+        categoria: "arquitetura",
+        confiabilidade: 6,
+        tempo_estimado: "20-30s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 8,
+            width: 768,
+            height: 512
+        }
+    },
+    {
+        nome: "Interior Design",
+        url: "stablediffusionapi/interior-design-diffusion",
+        categoria: "arquitetura",
+        confiabilidade: 6,
+        tempo_estimado: "25-35s",
+        parametros_customizados: {
+            num_inference_steps: 28,
+            guidance_scale: 7.5,
+            width: 768,
+            height: 512
+        }
+    },
+    
+    // === MODELOS EXPERIMENTAIS ===
+    {
+        nome: "Analog Diffusion",
+        url: "wavymulder/Analog-Diffusion",
+        categoria: "experimental",
+        confiabilidade: 7,
+        tempo_estimado: "20-30s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 7,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "Redshift Diffusion",
+        url: "nitrosocke/redshift-diffusion",
+        categoria: "experimental",
+        confiabilidade: 6,
+        tempo_estimado: "20-30s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 7.5,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "Future Diffusion",
+        url: "nitrosocke/Future-Diffusion",
+        categoria: "experimental",
+        confiabilidade: 6,
+        tempo_estimado: "20-30s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 7,
+            width: 512,
+            height: 512
+        }
+    },
+    
+    // === MODELOS PORTRAIT ===
+    {
+        nome: "Portrait Plus",
+        url: "stablediffusionapi/portrait-plus",
+        categoria: "retrato",
+        confiabilidade: 7,
+        tempo_estimado: "20-30s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 7.5,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "Beauty Face",
+        url: "stablediffusionapi/beauty-face",
+        categoria: "retrato",
+        confiabilidade: 6,
+        tempo_estimado: "20-30s",
+        parametros_customizados: {
+            num_inference_steps: 25,
+            guidance_scale: 7,
+            width: 512,
+            height: 512
+        }
+    },
+    
+    // === MODELOS RÁPIDOS ===
+    {
+        nome: "SD Turbo",
+        url: "stabilityai/sd-turbo",
+        categoria: "turbo",
+        confiabilidade: 8,
+        tempo_estimado: "5-10s",
+        parametros_customizados: {
+            num_inference_steps: 1,
+            guidance_scale: 0,
+            width: 512,
+            height: 512
+        }
+    },
+    {
+        nome: "SDXL Turbo",
+        url: "stabilityai/sdxl-turbo",
+        categoria: "turbo",
+        confiabilidade: 7,
+        tempo_estimado: "8-15s",
+        parametros_customizados: {
+            num_inference_steps: 1,
+            guidance_scale: 0,
+            width: 512,
+            height: 512
+        }
+    },
+    
+    // === MODELOS BACKUP ===
+    {
+        nome: "Stable Diffusion Web",
+        url: "stablediffusionapi/stable-diffusion-api",
+        categoria: "backup",
+        confiabilidade: 5,
+        tempo_estimado: "20-40s",
+        parametros_customizados: {
+            num_inference_steps: 20,
+            guidance_scale: 7.5,
+            width: 512,
+            height: 512
+        }
     }
 ];
+
+// Sistema de seleção inteligente de modelos
+function selecionarModeloPorEstilo(estilo, categoria = null) {
+    let modelosFiltrados = modelosHFPrioritarios;
+    
+    // Filtrar por categoria se especificada
+    if (categoria) {
+        modelosFiltrados = modelosFiltrados.filter(m => m.categoria === categoria);
+    }
+    
+    // Para estilo barroco, priorizar modelos artísticos e clássicos
+    if (estilo === 'BARROCO') {
+        const categoriasPrioritarias = ['artistico', 'classico', 'base'];
+        modelosFiltrados = modelosFiltrados.filter(m => 
+            categoriasPrioritarias.includes(m.categoria)
+        );
+    }
+    
+    // Para estilo renascentista, priorizar modelos realistas
+    if (estilo === 'RENASCENTISTA') {
+        const categoriasPrioritarias = ['fotorealista', 'artistico', 'base'];
+        modelosFiltrados = modelosFiltrados.filter(m => 
+            categoriasPrioritarias.includes(m.categoria)
+        );
+    }
+    
+    // Ordenar por confiabilidade
+    modelosFiltrados.sort((a, b) => b.confiabilidade - a.confiabilidade);
+    
+    // Retornar top 5 modelos
+    return modelosFiltrados.slice(0, 5);
+}
+
+// ============================================================================
+// FIM DA MEGA BIBLIOTECA DE MODELOS
+// ============================================================================
 
 // APIs alternativas MELHORADAS
 const apisAlternativas = [
@@ -562,75 +988,81 @@ async function chamarAPIHuggingFaceSeguro(url, prompt, parametros) {
 }
 
 // Função principal de tentativa de geração
+// Função principal com teste em massa de modelos
 async function tentarGerarImagemIA(promptBase, tema) {
     const startTime = Date.now();
-    console.log('🚀 Iniciando geração inteligente...');
+    console.log('🚀 Iniciando geração com 30+ modelos disponíveis...');
     mostrarProgresso('Preparando geração...', 5);
     
     const { prompt, negative_prompt, estilo } = gerarPromptEstilizado(promptBase);
     
-    const parametrosBase = {
-        ...parametrosEstilos[estilo],
-        negative_prompt: negative_prompt,
-        width: 1024,
-        height: 1024
-    };
-    
     const chave = getAPIKey();
     
-    // PRIORIDADE 1: Modelos Hugging Face
     if (chave) {
-        console.log('🤖 Priorizando modelos Hugging Face...');
+        console.log(`🤖 Testando modelos Hugging Face (${modelosHFPrioritarios.length} disponíveis)...`);
         
-        for (let i = 0; i < modelosHFPrioritarios.length; i++) {
-            const modelo = modelosHFPrioritarios[i];
+        // Selecionar modelos baseados no estilo
+        const modelosSelecionados = selecionarModeloPorEstilo(estilo);
+        console.log(`📋 ${modelosSelecionados.length} modelos selecionados para estilo ${estilo}`);
+        
+        // Testar modelos em ordem de confiabilidade
+        for (let i = 0; i < modelosSelecionados.length; i++) {
+            const modelo = modelosSelecionados[i];
             
             try {
-                mostrarProgresso(`🤖 ${modelo.nome}...`, 20 + (i * 30));
-                console.log(`🔄 Tentando ${modelo.nome} (Conf: ${modelo.confiabilidade}/10)`);
+                const progresso = 20 + (i * 15);
+                mostrarProgresso(`🤖 ${modelo.nome} (${modelo.categoria})...`, progresso);
+                console.log(`🔄 Testando ${modelo.nome} [${modelo.categoria}] (${modelo.confiabilidade}/10)`);
                 
-                const parametrosFinal = {
-                    ...parametrosBase,
+                const parametros = {
+                    ...parametrosEstilos[estilo],
+                    negative_prompt: negative_prompt,
                     ...modelo.parametros_customizados
                 };
                 
-                const blob = await chamarAPIHuggingFaceSeguro(modelo.url, prompt, parametrosFinal);
+                // Timeout mais curto para testar rapidamente
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout')), 20000)
+                );
+                
+                const apiPromise = chamarAPIHuggingFaceSeguro(modelo.url, prompt, parametros);
+                
+                const blob = await Promise.race([apiPromise, timeoutPromise]);
                 
                 if (blob && blob.size > 5000) {
                     const tempoTotal = Date.now() - startTime;
                     console.log(`✅ ${modelo.nome} funcionou em ${formatarTempo(tempoTotal)}!`);
                     
-                    mostrarToast(`🎨 Imagem criada por: ${modelo.nome} (${estilo})`, 'success');
+                    mostrarToast(`🎨 Sucesso: ${modelo.nome} (${modelo.categoria})`, 'success');
                     
                     stats.sucessoIA++;
                     stats.totalGerado++;
-                    stats.tempoMedio = (stats.tempoMedio + tempoTotal) / stats.sucessoIA;
+                    
+                    // Salvar modelo bem-sucedido
+                    localStorage.setItem('ultimo_modelo_sucesso', modelo.url);
                     
                     ultimaImagemBlob = blob;
                     return blob;
                 }
                 
             } catch (error) {
-                console.log(`❌ ${modelo.nome} falhou: ${error.message}`);
+                console.log(`⚠️ ${modelo.nome} falhou: ${error.message.substring(0, 50)}`);
                 stats.falhasIA++;
+                
+                // Continuar para próximo modelo
+                continue;
             }
-            
-            await delay(CONFIG.DELAY_BETWEEN_ATTEMPTS);
         }
-    } else {
-        console.log('🔐 Sem chave HuggingFace, pulando para alternativas');
+        
+        console.log('⚠️ Todos os modelos HF falharam, tentando alternativas...');
     }
     
-    // PRIORIDADE 2: APIs Alternativas
-    console.log('🆓 Tentando APIs alternativas gratuitas...');
+    // Fallback para APIs alternativas
+    console.log('🆓 Usando Pollinations AI como fallback...');
+    mostrarProgresso('Gerando com Pollinations...', 80);
     
-    for (let i = 0; i < apisAlternativas.length; i++) {
-        const api = apisAlternativas[i];
-        
+    for (const api of apisAlternativas) {
         try {
-            mostrarProgresso(`🆓 ${api.nome}...`, 60 + (i * 20));
-            console.log(`🔄 Tentando ${api.nome} (Conf: ${api.confiabilidade}/10)`);
-            
             const blob = await api.funcao(prompt);
             
             if (blob && blob.size > 3000) {
@@ -647,24 +1079,101 @@ async function tentarGerarImagemIA(promptBase, tema) {
             }
             
         } catch (error) {
-            console.log(`❌ ${api.nome} falhou: ${error.message}`);
-            stats.falhasIA++;
+            console.log(`⚠️ ${api.nome} falhou`);
         }
-        
-        await delay(1000);
     }
     
-    // PRIORIDADE 3: Arte Local
-    console.log('🎨 Todas as APIs falharam, gerando arte local...');
-    mostrarProgresso('Criando arte local...', 90);
-    
+    // Último recurso: Arte Local
+    console.log('🎨 Gerando arte local...');
     return await gerarArteLocal(prompt, tema, estilo);
 }
 
 // ============================================================================
 // FIM PARTE 7: FUNÇÕES DE CHAMADA DE API
 // ============================================================================
+// Adicione esta função para testar quais modelos estão online
+async function testarModelosHF() {
+    console.log('🧪 INICIANDO TESTE DE MODELOS HUGGING FACE...');
+    const chave = getAPIKey();
+    
+    if (!chave) {
+        console.error('❌ Nenhuma chave API configurada');
+        return;
+    }
+    
+    const resultados = [];
+    const prompt = "beautiful landscape, high quality";
+    
+    for (const modelo of modelosHFPrioritarios) {
+        console.log(`📡 Testando ${modelo.nome}...`);
+        
+        try {
+            const response = await fetch(
+                `https://api-inference.huggingface.co/models/${modelo.url}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${chave}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        inputs: prompt,
+                        parameters: modelo.parametros_customizados
+                    })
+                }
+            );
+            
+            if (response.ok) {
+                console.log(`✅ ${modelo.nome} - FUNCIONANDO`);
+                resultados.push({
+                    nome: modelo.nome,
+                    url: modelo.url,
+                    status: 'OK',
+                    categoria: modelo.categoria
+                });
+            } else {
+                console.log(`❌ ${modelo.nome} - Status ${response.status}`);
+                resultados.push({
+                    nome: modelo.nome,
+                    url: modelo.url,
+                    status: `Erro ${response.status}`,
+                    categoria: modelo.categoria
+                });
+            }
+            
+            // Pequena pausa entre testes
+            await new Promise(r => setTimeout(r, 1000));
+            
+        } catch (error) {
+            console.log(`❌ ${modelo.nome} - ${error.message}`);
+            resultados.push({
+                nome: modelo.nome,
+                url: modelo.url,
+                status: 'Erro',
+                categoria: modelo.categoria
+            });
+        }
+    }
+    
+    // Mostrar relatório
+    console.table(resultados);
+    
+    const funcionando = resultados.filter(r => r.status === 'OK');
+    console.log(`📊 RESULTADO: ${funcionando.length}/${modelosHFPrioritarios.length} modelos funcionando`);
+    
+    return funcionando;
+}
 
+// Adicionar ao debugFunctions
+window.debugFunctions.testarModelos = testarModelosHF;
+window.debugFunctions.listarModelos = () => {
+    console.table(modelosHFPrioritarios.map(m => ({
+        Nome: m.nome,
+        Categoria: m.categoria,
+        Confiabilidade: m.confiabilidade,
+        URL: m.url
+    })));
+};
 // ============================================================================
 // INÍCIO PARTE 8: SISTEMA DE CANVAS E EXIBIÇÃO DE IMAGEM
 // ============================================================================
