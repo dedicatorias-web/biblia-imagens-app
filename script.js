@@ -4,7 +4,7 @@
 // ============================================================================
 
 // Configurações principais
-const CONFIG = {
+const CONFIG = { 
     VERSION: '3.2.0',
     DEBUG: true,
     API_TIMEOUT: 60000,
