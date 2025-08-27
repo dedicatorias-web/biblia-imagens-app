@@ -1,17 +1,14 @@
-
-
-
 // ============================================================================
 // INÍCIO PARTE 1: CONFIGURAÇÕES GLOBAIS E CONSTANTES
 // ============================================================================
 
 // Configurações principais
 const CONFIG = {
-    VERSION: '2.0.0',
+    VERSION: '3.2.0',
     DEBUG: true,
-    API_TIMEOUT: 30000,
+    API_TIMEOUT: 60000,
     MAX_RETRIES: 3,
-    DELAY_BETWEEN_ATTEMPTS: 1000
+    DELAY_BETWEEN_ATTEMPTS: 5000
 };
 
 // URLs das APIs
@@ -34,6 +31,7 @@ let versiculoAtual = null;
 let temaAtual = 'esperanca';
 let versiculos = [];
 let historicoImagens = [];
+let ultimaImagemBlob = null;
 
 // ============================================================================
 // FIM PARTE 1: CONFIGURAÇÕES GLOBAIS E CONSTANTES
@@ -47,7 +45,7 @@ const estilosArtisticos = {
     BARROCO: {
         nome: "Barroco",
         periodo: "séculos XVII-XVIII",
-        peso: 0.6, // 60% de chance
+        peso: 0.6,
         descricao: "Dramaticidade intensa e chiaroscuro",
         caracteristicas: [
             "contraste extremo de luz e sombra (chiaroscuro)",
@@ -79,7 +77,7 @@ const estilosArtisticos = {
     RENASCENTISTA: {
         nome: "Renascentista", 
         periodo: "séculos XIV-XVI",
-        peso: 0.4, // 40% de chance
+        peso: 0.4,
         descricao: "Proporção matemática e harmonia",
         caracteristicas: [
             "proporção e simetria matemática",
@@ -140,32 +138,32 @@ const elementosHistoricos = {
 // INÍCIO PARTE 3: MODELOS DE IA E PARÂMETROS
 // ============================================================================
 
-// Modelos Hugging Face prioritários (testados e funcionais)
+// Modelos Hugging Face prioritários
 const modelosHFPrioritarios = [
     {
-        nome: "SDXL Base 1.0",
-        url: "stabilityai/stable-diffusion-xl-base-1.0",
+        nome: "Stable Diffusion 2.1",
+        url: "stabilityai/stable-diffusion-2-1",
         categoria: "alta",
-        confiabilidade: 10,
-        tempo_estimado: "30-60s",
+        confiabilidade: 9,
+        tempo_estimado: "20-40s",
         parametros_customizados: {
-            num_inference_steps: 50,
-            guidance_scale: 8.5,
-            width: 1024,
-            height: 1024
+            num_inference_steps: 30,
+            guidance_scale: 7.5,
+            width: 768,
+            height: 768
         }
     },
     {
-        nome: "SDXL Turbo",
-        url: "stabilityai/sdxl-turbo",
+        nome: "OpenJourney V4",
+        url: "prompthero/openjourney-v4",
         categoria: "rapida",
         confiabilidade: 8,
-        tempo_estimado: "10-20s",
+        tempo_estimado: "15-30s",
         parametros_customizados: {
             num_inference_steps: 25,
-            guidance_scale: 7.5,
-            width: 1024,
-            height: 1024
+            guidance_scale: 7,
+            width: 512,
+            height: 512
         }
     }
 ];
@@ -302,7 +300,7 @@ function formatarTempo(ms) {
 
 // Obter API key de múltiplas fontes
 function getAPIKey() {
-    // 1. CONFIG do GitHub Actions (produção)
+    // Config do GitHub Actions (produção)
     if (typeof window !== 'undefined' && window.CONFIG?.HUGGING_FACE_API_KEY) {
         const chave = window.CONFIG.HUGGING_FACE_API_KEY;
         if (chave && chave !== '{{ HUGGING_FACE_API_KEY }}' && chave.startsWith('hf_')) {
@@ -311,7 +309,7 @@ function getAPIKey() {
         }
     }
     
-    // 2. Variável global (desenvolvimento)
+    // Variável global (desenvolvimento)
     if (typeof HUGGING_FACE_API_KEY !== 'undefined' && 
         HUGGING_FACE_API_KEY && 
         HUGGING_FACE_API_KEY !== 'SUA_CHAVE_AQUI' && 
@@ -320,14 +318,14 @@ function getAPIKey() {
         return HUGGING_FACE_API_KEY;
     }
     
-    // 3. localStorage (usuário definiu manualmente)
+    // localStorage (usuário definiu manualmente)
     const storedKey = localStorage.getItem('hf_api_key');
     if (storedKey?.startsWith('hf_')) {
         console.log('🔑 Usando chave do localStorage');
         return storedKey;
     }
     
-    // 4. Chave manual temporária
+    // Chave manual temporária
     if (window.CHAVE_MANUAL?.startsWith('hf_')) {
         console.log('🔑 Usando chave manual temporária');
         return window.CHAVE_MANUAL;
@@ -395,7 +393,7 @@ function escolherEstiloAleatorio() {
         }
     }
     
-    return "BARROCO"; // Fallback seguro
+    return "BARROCO";
 }
 
 // Gerar prompt estilizado com elementos históricos
@@ -403,14 +401,11 @@ function gerarPromptEstilizado(promptBase) {
     const estiloEscolhido = escolherEstiloAleatorio();
     const config = estilosArtisticos[estiloEscolhido];
     
-    // Escolher elemento histórico aleatório
     const elementos = elementosHistoricos[estiloEscolhido];
     const elementoAleatorio = elementos[Math.floor(Math.random() * elementos.length)];
     
-    // Escolher artistas de referência
     const artistasRef = config.artistas.slice(0, 2).join(" and ");
     
-    // Construir prompt completo
     const promptFinal = [
         `masterpiece, ${config.nome.toLowerCase()} painting style`,
         promptBase,
@@ -424,7 +419,6 @@ function gerarPromptEstilizado(promptBase) {
         "no modern elements"
     ].join(", ");
     
-    // Log detalhado
     console.log(`🎨 ESTILO: ${config.nome} (${config.periodo})`);
     console.log(`🖌️ ARTISTAS: ${artistasRef}`);
     console.log(`📝 ELEMENTO: ${elementoAleatorio}`);
@@ -478,18 +472,20 @@ function extrairPalavrasChave(texto) {
 // INÍCIO PARTE 7: FUNÇÕES DE CHAMADA DE API
 // ============================================================================
 
-// Chamar API Hugging Face com segurança e retry
+// Chamar API Hugging Face com URLs CORRETAS
 async function chamarAPIHuggingFaceSeguro(url, prompt, parametros) {
     const chave = getAPIKey();
     if (!chave) {
-        throw new Error('🔑 Chave API não configurada ou inválida');
+        throw new Error('🔑 Chave API não configurada');
     }
+    
+    const urlCompleta = `https://api-inference.huggingface.co/models/${url}`;
     
     const tentarChamada = async (tentativa = 1) => {
         try {
-            console.log(`🔄 Chamando: ${url.split('/').pop()} (tentativa ${tentativa})`);
+            console.log(`🔄 Chamando: ${url} (tentativa ${tentativa})`);
             
-            const response = await fetch(API_URLS.HUGGING_FACE_BASE + url, {
+            const response = await fetch(urlCompleta, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${chave}`,
@@ -498,37 +494,48 @@ async function chamarAPIHuggingFaceSeguro(url, prompt, parametros) {
                 },
                 body: JSON.stringify({
                     inputs: prompt,
-                    parameters: parametros
+                    parameters: parametros,
+                    options: {
+                        wait_for_model: true
+                    }
                 }),
                 signal: AbortSignal.timeout(CONFIG.API_TIMEOUT)
             });
             
-            console.log(`📡 Status: ${response.status} | Modelo: ${url.split('/').pop()}`);
+            console.log(`📡 Status: ${response.status}`);
             
             if (response.status === 503) {
-                console.log('⏳ Modelo carregando, aguardando...');
-                await delay(5000);
+                const data = await response.json();
+                const tempoEspera = data.estimated_time || 20;
+                console.log(`⏳ Modelo carregando... aguardando ${tempoEspera}s`);
+                await delay(tempoEspera * 1000);
+                
                 if (tentativa < CONFIG.MAX_RETRIES) {
                     return tentarChamada(tentativa + 1);
                 }
             }
             
             if (!response.ok) {
-                const errorText = await response.text();
+                let errorText = 'Erro desconhecido';
+                try {
+                    errorText = await response.text();
+                } catch (e) {
+                    // Ignorar erro ao ler texto
+                }
                 throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
             
             const blob = await response.blob();
             
             if (blob.size < 1000) {
-                throw new Error('Imagem muito pequena ou corrompida');
+                throw new Error('Imagem muito pequena');
             }
             
-            console.log(`✅ Sucesso: ${blob.size} bytes | ${url.split('/').pop()}`);
+            console.log(`✅ Sucesso: ${(blob.size / 1024).toFixed(2)}KB`);
             return blob;
             
         } catch (error) {
-            console.log(`❌ Erro em ${url.split('/').pop()}: ${error.message}`);
+            console.error(`❌ Erro: ${error.message}`);
             
             if (tentativa < CONFIG.MAX_RETRIES && error.name !== 'AbortError') {
                 console.log(`🔄 Tentando novamente em ${CONFIG.DELAY_BETWEEN_ATTEMPTS}ms...`);
@@ -549,10 +556,8 @@ async function tentarGerarImagemIA(promptBase, tema) {
     console.log('🚀 Iniciando geração inteligente...');
     mostrarProgresso('Preparando geração...', 5);
     
-    // Gerar prompt estilizado
     const { prompt, negative_prompt, estilo } = gerarPromptEstilizado(promptBase);
     
-    // Preparar parâmetros específicos do estilo
     const parametrosBase = {
         ...parametrosEstilos[estilo],
         negative_prompt: negative_prompt,
@@ -562,7 +567,7 @@ async function tentarGerarImagemIA(promptBase, tema) {
     
     const chave = getAPIKey();
     
-    // PRIORIDADE 1: Modelos Hugging Face (se tiver chave)
+    // PRIORIDADE 1: Modelos Hugging Face
     if (chave) {
         console.log('🤖 Priorizando modelos Hugging Face...');
         
@@ -586,11 +591,11 @@ async function tentarGerarImagemIA(promptBase, tema) {
                     
                     mostrarToast(`🎨 Imagem criada por: ${modelo.nome} (${estilo})`, 'success');
                     
-                    // Atualizar estatísticas
                     stats.sucessoIA++;
                     stats.totalGerado++;
                     stats.tempoMedio = (stats.tempoMedio + tempoTotal) / stats.sucessoIA;
                     
+                    ultimaImagemBlob = blob;
                     return blob;
                 }
                 
@@ -605,7 +610,7 @@ async function tentarGerarImagemIA(promptBase, tema) {
         console.log('🔐 Sem chave HuggingFace, pulando para alternativas');
     }
     
-    // PRIORIDADE 2: APIs Alternativas (sem chave)
+    // PRIORIDADE 2: APIs Alternativas
     console.log('🆓 Tentando APIs alternativas gratuitas...');
     
     for (let i = 0; i < apisAlternativas.length; i++) {
@@ -626,6 +631,7 @@ async function tentarGerarImagemIA(promptBase, tema) {
                 stats.sucessoIA++;
                 stats.totalGerado++;
                 
+                ultimaImagemBlob = blob;
                 return blob;
             }
             
@@ -637,7 +643,7 @@ async function tentarGerarImagemIA(promptBase, tema) {
         await delay(1000);
     }
     
-    // PRIORIDADE 3: Arte Local (fallback final)
+    // PRIORIDADE 3: Arte Local
     console.log('🎨 Todas as APIs falharam, gerando arte local...');
     mostrarProgresso('Criando arte local...', 90);
     
@@ -649,10 +655,161 @@ async function tentarGerarImagemIA(promptBase, tema) {
 // ============================================================================
 
 // ============================================================================
-// INÍCIO PARTE 8: SISTEMA DE ARTE LOCAL (FALLBACK)
+// INÍCIO PARTE 8: SISTEMA DE CANVAS E EXIBIÇÃO DE IMAGEM
 // ============================================================================
 
-// Gerar arte local usando Canvas
+// Exibir imagem no canvas com texto automaticamente
+async function exibirImagemComTexto(blob) {
+    console.log('🖼️ Exibindo imagem com texto...');
+    
+    const canvas = document.getElementById('canvasImagem');
+    if (!canvas || canvas.tagName !== 'CANVAS') {
+        console.error('❌ Canvas não encontrado');
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    const imagemURL = URL.createObjectURL(blob);
+    
+    img.onload = function() {
+        console.log(`✅ Imagem carregada: ${img.width}x${img.height}`);
+        
+        canvas.width = img.width;
+        canvas.height = img.height;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        
+        if (versiculoAtual) {
+            adicionarTextoEleganteNoCanvas(ctx, canvas);
+        }
+        
+        canvas.style.opacity = '0';
+        canvas.style.transition = 'opacity 1s';
+        setTimeout(() => {
+            canvas.style.opacity = '1';
+        }, 50);
+        
+        URL.revokeObjectURL(imagemURL);
+        
+        const btnBaixar = document.getElementById('baixarImagem');
+        if (btnBaixar) btnBaixar.disabled = false;
+        
+        console.log('✅ Imagem e texto prontos!');
+    };
+    
+    img.onerror = function() {
+        console.error('❌ Erro ao carregar imagem');
+        URL.revokeObjectURL(imagemURL);
+    };
+    
+    img.src = imagemURL;
+}
+
+// Adicionar texto elegante no canvas
+function adicionarTextoEleganteNoCanvas(ctx, canvas) {
+    if (!versiculoAtual) return;
+    
+    const posicao = document.getElementById('posicaoTexto')?.value || 'bottom';
+    const qualidade = document.getElementById('qualidadeImagem')?.value || 'alta';
+    
+    console.log(`📝 Adicionando texto: posição=${posicao}, qualidade=${qualidade}`);
+    
+    const overlayHeight = 150;
+    let overlayY;
+    
+    switch(posicao) {
+        case 'top':
+            overlayY = 0;
+            break;
+        case 'center':
+            overlayY = (canvas.height - overlayHeight) / 2;
+            break;
+        case 'bottom':
+        default:
+            overlayY = canvas.height - overlayHeight;
+    }
+    
+    // Desenhar fundo semi-transparente
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillRect(0, overlayY, canvas.width, overlayHeight);
+    
+    // Adicionar gradiente
+    const gradient = ctx.createLinearGradient(0, overlayY, 0, overlayY + overlayHeight);
+    gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    gradient.addColorStop(0.2, 'rgba(0, 0, 0, 0.4)');
+    gradient.addColorStop(0.8, 'rgba(0, 0, 0, 0.4)');
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, overlayY, canvas.width, overlayHeight);
+    
+    // Configurar texto
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    const maxWidth = canvas.width - 80;
+    const palavras = versiculoAtual.texto.split(' ');
+    const linhas = [];
+    let linhaAtual = '';
+    
+    const tamanhoFonte = qualidade === 'alta' ? 32 : 24;
+    ctx.font = `bold ${tamanhoFonte}px 'Segoe UI', Arial, sans-serif`;
+    
+    // Criar linhas
+    for (const palavra of palavras) {
+        const teste = linhaAtual + palavra + ' ';
+        const medida = ctx.measureText(teste);
+        
+        if (medida.width > maxWidth && linhaAtual !== '') {
+            linhas.push(linhaAtual.trim());
+            linhaAtual = palavra + ' ';
+        } else {
+            linhaAtual = teste;
+        }
+    }
+    linhas.push(linhaAtual.trim());
+    
+    const alturaLinha = tamanhoFonte * 1.2;
+    const alturaTotal = linhas.length * alturaLinha + 30;
+    const yInicial = overlayY + (overlayHeight - alturaTotal) / 2 + alturaLinha / 2;
+    
+    // Desenhar texto com sombra
+    ctx.fillStyle = 'white';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+    
+    linhas.forEach((linha, index) => {
+        const y = yInicial + (index * alturaLinha);
+        ctx.fillText(linha, canvas.width / 2, y);
+    });
+    
+    // Adicionar referência
+    ctx.font = `italic ${tamanhoFonte * 0.6}px 'Georgia', serif`;
+    ctx.fillStyle = '#FFD700';
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+    ctx.shadowBlur = 3;
+    
+    const yReferencia = yInicial + (linhas.length * alturaLinha) + 10;
+    ctx.fillText(`— ${versiculoAtual.referencia}`, canvas.width / 2, yReferencia);
+    
+    // Limpar sombra
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    
+    console.log(`✅ Texto adicionado: ${linhas.length} linhas`);
+}
+
+// Wrapper para compatibilidade
+async function exibirImagem(blob) {
+    return exibirImagemComTexto(blob);
+}
+
+// Gerar arte local como fallback
 async function gerarArteLocal(prompt, tema, estilo) {
     console.log('🎨 Gerando arte local com Canvas...');
     
@@ -661,7 +818,6 @@ async function gerarArteLocal(prompt, tema, estilo) {
     canvas.height = 1024;
     const ctx = canvas.getContext('2d');
     
-    // Definir cores baseadas no estilo
     const paletas = {
         BARROCO: {
             fundo: ['#1a0f0a', '#2d1810', '#3d251a'],
@@ -686,10 +842,9 @@ async function gerarArteLocal(prompt, tema, estilo) {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Adicionar elementos decorativos
+    // Adicionar raios de luz
     ctx.globalAlpha = 0.3;
     
-    // Raios de luz
     for (let i = 0; i < 12; i++) {
         ctx.save();
         ctx.translate(512, 200);
@@ -711,29 +866,21 @@ async function gerarArteLocal(prompt, tema, estilo) {
         ctx.restore();
     }
     
-    // Adicionar texto do versículo
     ctx.globalAlpha = 1;
-    ctx.font = 'bold 48px Georgia';
-    ctx.fillStyle = paleta.sombra[0];
-    ctx.textAlign = 'center';
-    ctx.shadowColor = paleta.luz[0];
-    ctx.shadowBlur = 20;
-    
-    const palavras = prompt.split(' ').slice(0, 5).join(' ');
-    ctx.fillText(palavras.toUpperCase(), 512, 900);
     
     // Converter para blob
     return new Promise((resolve) => {
         canvas.toBlob((blob) => {
             console.log('✅ Arte local gerada com sucesso!');
             mostrarToast('🎨 Arte criada localmente', 'success');
+            ultimaImagemBlob = blob;
             resolve(blob);
         }, 'image/jpeg', 0.95);
     });
 }
 
 // ============================================================================
-// FIM PARTE 8: SISTEMA DE ARTE LOCAL (FALLBACK)
+// FIM PARTE 8: SISTEMA DE CANVAS E EXIBIÇÃO DE IMAGEM
 // ============================================================================
 
 // ============================================================================
@@ -747,17 +894,12 @@ async function gerarVersiculoComIA(versiculo, tema) {
     console.log(`🎯 Tema: ${tema}`);
     
     try {
-        // Criar prompt base
         const promptBase = criarPromptBase(versiculo, tema);
-        
-        // Tentar gerar imagem
         const imagemBlob = await tentarGerarImagemIA(promptBase, tema);
         
         if (imagemBlob) {
-            // Exibir imagem
-            await exibirImagem(imagemBlob);
+            await exibirImagemComTexto(imagemBlob);
             
-            // Salvar no histórico
             historicoImagens.push({
                 versiculo: versiculo,
                 tema: tema,
@@ -776,28 +918,37 @@ async function gerarVersiculoComIA(versiculo, tema) {
     }
 }
 
-// Exibir imagem na interface
-async function exibirImagem(blob) {
-    const imagemURL = URL.createObjectURL(blob);
-    const canvasImagem = document.getElementById('canvasImagem');
+// Atualizar interface com versículo atual
+function atualizarInterface() {
+    if (!versiculoAtual) {
+        console.error('❌ Nenhum versículo atual definido');
+        return;
+    }
     
-    if (canvasImagem) {
-        // Adicionar efeito de fade
-        canvasImagem.style.opacity = '0';
-        canvasImagem.src = imagemURL;
-        
-        canvasImagem.onload = () => {
-            canvasImagem.style.transition = 'opacity 1s';
-            canvasImagem.style.opacity = '1';
-            
-            // Limpar URL antiga após carregar
-            setTimeout(() => {
-                if (canvasImagem.dataset.oldSrc) {
-                    URL.revokeObjectURL(canvasImagem.dataset.oldSrc);
-                }
-                canvasImagem.dataset.oldSrc = imagemURL;
-            }, 1000);
-        };
+    console.log('📝 Atualizando texto do versículo...');
+    
+    const elementoTexto = document.getElementById('versiculoTexto');
+    if (elementoTexto) {
+        elementoTexto.textContent = versiculoAtual.texto;
+        elementoTexto.style.opacity = '0';
+        setTimeout(() => {
+            elementoTexto.style.transition = 'opacity 1s';
+            elementoTexto.style.opacity = '1';
+        }, 100);
+        console.log('✅ Texto atualizado');
+    }
+    
+    const elementoReferencia = document.getElementById('versiculoReferencia');
+    if (elementoReferencia) {
+        elementoReferencia.textContent = versiculoAtual.referencia;
+        console.log('✅ Referência atualizada');
+    }
+    
+    const contador = document.getElementById('contadorVersiculos');
+    if (contador) {
+        const count = parseInt(contador.textContent || '0') + 1;
+        contador.textContent = count;
+        console.log(`✅ Contador: ${count}`);
     }
 }
 
@@ -825,14 +976,11 @@ async function carregarVersiculos() {
         
         console.log(`✅ ${versiculos.length} versículos carregados`);
         
-        // Agrupar por tema
         const temas = [...new Set(versiculos.map(v => v.tema))];
         console.log(`📚 Temas disponíveis: ${temas.join(', ')}`);
         
-        // Popular dropdown de temas se existir
         popularTemas(temas);
         
-        // Gerar primeiro versículo automaticamente
         if (versiculos.length > 0) {
             await gerarNovoVersiculo();
         }
@@ -840,7 +988,6 @@ async function carregarVersiculos() {
     } catch (error) {
         console.error('❌ Erro ao carregar versículos:', error);
         
-        // Usar versículos de fallback
         versiculos = obterVersiculosFallback();
         console.log('📚 Usando versículos de fallback');
         
@@ -881,6 +1028,41 @@ function obterVersiculosFallback() {
             texto: "O Senhor é o meu pastor, nada me faltará.",
             referencia: "Salmos 23:1",
             tema: "paz"
+        },
+        {
+            texto: "Tudo posso naquele que me fortalece.",
+            referencia: "Filipenses 4:13",
+            tema: "forca"
+        },
+        {
+            texto: "O amor é paciente, é benigno; o amor não é invejoso, não se vangloria, não se ensoberbece.",
+            referencia: "1 Coríntios 13:4",
+            tema: "amor"
+        },
+        {
+            texto: "Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito, para que todo aquele que nele crê não pereça, mas tenha a vida eterna.",
+            referencia: "João 3:16",
+            tema: "amor"
+        },
+        {
+            texto: "Não temas, porque eu sou contigo; não te assombres, porque eu sou o teu Deus; eu te esforço, e te ajudo, e te sustento com a destra da minha justiça.",
+            referencia: "Isaías 41:10",
+            tema: "forca"
+        },
+        {
+            texto: "Entrega o teu caminho ao Senhor; confia nele, e ele tudo fará.",
+            referencia: "Salmos 37:5",
+            tema: "fe"
+        },
+        {
+            texto: "Bendize, ó minha alma, ao Senhor, e não te esqueças de nenhum de seus benefícios.",
+            referencia: "Salmos 103:2",
+            tema: "gratidao"
+        },
+        {
+            texto: "Ora, a fé é o firme fundamento das coisas que se esperam, e a prova das coisas que não se veem.",
+            referencia: "Hebreus 11:1",
+            tema: "fe"
         }
     ];
 }
@@ -899,14 +1081,12 @@ async function gerarNovoVersiculo() {
     
     const temaEscolhido = document.getElementById('temaEscolhido')?.value || '';
     
-    // Filtrar por tema se selecionado
     let versiculosDisponiveis = versiculos;
     if (temaEscolhido) {
         versiculosDisponiveis = versiculos.filter(v => v.tema === temaEscolhido);
         console.log(`🎯 Filtrando por tema: ${temaEscolhido}`);
     }
     
-    // Escolher versículo aleatório
     if (versiculosDisponiveis.length > 0) {
         const indice = Math.floor(Math.random() * versiculosDisponiveis.length);
         versiculoAtual = versiculosDisponiveis[indice];
@@ -914,35 +1094,11 @@ async function gerarNovoVersiculo() {
         
         console.log(`📖 Versículo escolhido: ${versiculoAtual.referencia}`);
         
-        // Atualizar interface
         atualizarInterface();
-        
-        // Gerar imagem com IA
         await gerarVersiculoComIA(versiculoAtual, temaAtual);
     } else {
         console.log('⚠️ Nenhum versículo disponível para o tema selecionado');
         mostrarToast('Nenhum versículo encontrado para este tema', 'error');
-    }
-}
-
-// Atualizar interface com versículo atual
-function atualizarInterface() {
-    if (!versiculoAtual) return;
-    
-    const elementoTexto = document.getElementById('versiculoTexto');
-    const elementoReferencia = document.getElementById('versiculoReferencia');
-    
-    if (elementoTexto) {
-        elementoTexto.textContent = versiculoAtual.texto;
-        elementoTexto.style.opacity = '0';
-        setTimeout(() => {
-            elementoTexto.style.transition = 'opacity 1s';
-            elementoTexto.style.opacity = '1';
-        }, 100);
-    }
-    
-    if (elementoReferencia) {
-        elementoReferencia.textContent = versiculoAtual.referencia;
     }
 }
 
@@ -951,7 +1107,7 @@ function atualizarInterface() {
 // ============================================================================
 
 // ============================================================================
-// INÍCIO PARTE 12: SISTEMA DE COMPARTILHAMENTO
+// INÍCIO PARTE 12: SISTEMA DE COMPARTILHAMENTO E DOWNLOAD
 // ============================================================================
 
 // Compartilhar versículo
@@ -961,29 +1117,26 @@ async function compartilharVersiculo() {
     const canvas = document.getElementById('canvasImagem');
     const textoCompleto = `${versiculoAtual.texto}\n- ${versiculoAtual.referencia}`;
     
-    // Tentar Web Share API
     if (navigator.share && canvas) {
         try {
-            // Converter imagem para blob
-            const response = await fetch(canvas.src);
-            const blob = await response.blob();
-            const file = new File([blob], 'versiculo.png', { type: 'image/png' });
-            
-            await navigator.share({
-                title: 'Versículo do Dia',
-                text: textoCompleto,
-                files: [file]
-            });
-            
-            console.log('✅ Compartilhado com sucesso!');
-            mostrarToast('Compartilhado com sucesso!', 'success');
+            canvas.toBlob(async (blob) => {
+                const file = new File([blob], 'versiculo.png', { type: 'image/png' });
+                
+                await navigator.share({
+                    title: 'Versículo do Dia',
+                    text: textoCompleto,
+                    files: [file]
+                });
+                
+                console.log('✅ Compartilhado com sucesso!');
+                mostrarToast('Compartilhado com sucesso!', 'success');
+            }, 'image/png');
             
         } catch (error) {
             console.log('❌ Erro ao compartilhar:', error);
             copiarTextoParaClipboard(textoCompleto);
         }
     } else {
-        // Fallback: copiar para clipboard
         copiarTextoParaClipboard(textoCompleto);
     }
 }
@@ -999,23 +1152,31 @@ function copiarTextoParaClipboard(texto) {
     });
 }
 
-// Baixar imagem
+// Baixar imagem do canvas
 function baixarImagem() {
     const canvas = document.getElementById('canvasImagem');
     
-    if (canvas && canvas.src) {
+    if (!canvas || canvas.tagName !== 'CANVAS') {
+        console.error('❌ Canvas não encontrado para download');
+        return;
+    }
+    
+    canvas.toBlob(function(blob) {
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.download = `versiculo_${Date.now()}.png`;
-        link.href = canvas.src;
+        link.href = url;
         link.click();
+        
+        setTimeout(() => URL.revokeObjectURL(url), 100);
         
         console.log('⬇️ Download iniciado');
         mostrarToast('Download iniciado!', 'success');
-    }
+    }, 'image/png');
 }
 
 // ============================================================================
-// FIM PARTE 12: SISTEMA DE COMPARTILHAMENTO
+// FIM PARTE 12: SISTEMA DE COMPARTILHAMENTO E DOWNLOAD
 // ============================================================================
 
 // ============================================================================
@@ -1026,316 +1187,6 @@ function baixarImagem() {
 function configurarEventos() {
     console.log('⚙️ Configurando eventos...');
     
-    // Botão gerar versículo
-    const btnGerar = document.getElementById('gerarVersiculo');
-    if (btnGerar) {
-        btnGerar.addEventListener('click', async () => {
-            btnGerar.disabled = true;
-            btnGerar.textContent = 'Gerando...';
-            
-            await gerarNovoVersiculo();
-            
-            btnGerar.disabled = false;
-            btnGerar.textContent = 'Gerar Novo Versículo';
-        });
-    }
-    
-    // Mudança de tema
-    const selectTema = document.getElementById('temaEscolhido');
-    if (selectTema) {
-        selectTema.addEventListener('change', async () => {
-            console.log(`🎯 Tema alterado para: ${selectTema.value}`);
-            await gerarNovoVersiculo();
-        });
-    }
-    
-    // Botões de compartilhamento
-    const btnCompartilhar = document.getElementById('compartilhar');
-    if (btnCompartilhar) {
-        btnCompartilhar.addEventListener('click', compartilharVersiculo);
-    }
-    
-    const btnBaixar = document.getElementById('baixar');
-    if (btnBaixar) {
-        btnBaixar.addEventListener('click', baixarImagem);
-    }
-    
-    // Atalhos de teclado
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            gerarNovoVersiculo();
-        }
-        if (e.key === 's' && e.ctrlKey) {
-            e.preventDefault();
-            baixarImagem();
-        }
-    });
-}
-
-// Verificar elementos do DOM
-function verificarElementosDOM() {
-    console.log('📄 Verificando elementos do DOM...');
-    
-    const elementosNecessarios = [
-        'temaEscolhido',
-        'versiculoTexto',
-        'versiculoReferencia',
-        'gerarVersiculo',
-        'canvasImagem'
-    ];
-    
-    elementosNecessarios.forEach(id => {
-        const elemento = document.getElementById(id);
-        if (elemento) {
-            console.log(`✅ ${id}: ENCONTRADO`);
-        } else {
-            console.log(`❌ ${id}: NÃO ENCONTRADO`);
-        }
-    });
-}
-
-// Inicialização principal
-async function inicializarSistema() {
-    console.log('🔍 INICIANDO DEBUG...');
-    console.log('✅ Script de Versículos IA carregado completamente!');
-    
-    verificarElementosDOM();
-    
-    console.log('✅ Variável versiculos: DEFINIDA');
-    console.log(`📚 Temas disponíveis: []`);
-    console.log(`🎯 versiculoAtual: ${versiculoAtual}`);
-    
-    configurarEventos();
-    
-    // Verificar chave API
-    const chaveValida = await verificarChaveAPI();
-    if (chaveValida) {
-        console.log('🔑 Chave API válida e pronta para uso');
-    } else {
-        console.log('⚠️ Usando apenas APIs gratuitas');
-    }
-    
-    // Carregar versículos
-    await carregarVersiculos();
-    
-    console.log('📊 Estatísticas:', stats.totalGerado, 'imagens geradas');
-    console.log('🚀 Sistema de Versículos com IA inicializado completamente!');
-    console.log('💡 Funcionalidades: Geração IA, Fallback Artístico, Compartilhamento, Analytics');
-}
-
-// Event listener principal
-document.addEventListener('DOMContentLoaded', inicializarSistema);
-
-// Exportar funções para debug no console
-window.debugFunctions = {
-    definirChave: definirChaveManualmente,
-    verificarChave: verificarChaveAPI,
-    gerarVersiculo: gerarNovoVersiculo,
-    stats: () => console.table(stats),
-    limparCache: () => {
-        localStorage.clear();
-        console.log('🧹 Cache limpo');
-    }
-};
-
-console.log('💡 Dica: Use window.debugFunctions para acessar funções de debug');
-
-// ============================================================================
-// FIM PARTE 13: EVENTOS E INICIALIZAÇÃO
-// ============================================================================
-
-// ============================================================================
-// CORREÇÃO PRINCIPAL: EXIBIR IMAGEM NO CANVAS
-// ============================================================================
-
-async function exibirImagem(blob) {
-    console.log('🖼️ Exibindo imagem no canvas...');
-    
-    const canvas = document.getElementById('canvasImagem');
-    
-    if (!canvas) {
-        console.error('❌ Canvas não encontrado!');
-        return;
-    }
-    
-    // Verificar se é realmente um canvas
-    if (canvas.tagName !== 'CANVAS') {
-        console.error(`❌ Elemento canvasImagem não é um canvas, é um ${canvas.tagName}`);
-        return;
-    }
-    
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-    
-    // Criar URL da imagem
-    const imagemURL = URL.createObjectURL(blob);
-    
-    img.onload = function() {
-        console.log(`✅ Imagem carregada: ${img.width}x${img.height}`);
-        
-        // Ajustar tamanho do canvas
-        canvas.width = img.width;
-        canvas.height = img.height;
-        
-        // Limpar canvas
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Desenhar imagem
-        ctx.drawImage(img, 0, 0);
-        
-        console.log('🎨 Imagem desenhada no canvas!');
-        
-        // Adicionar fade in
-        canvas.style.opacity = '0';
-        canvas.style.transition = 'opacity 1s';
-        setTimeout(() => {
-            canvas.style.opacity = '1';
-        }, 50);
-        
-        // Limpar URL após uso
-        URL.revokeObjectURL(imagemURL);
-        
-        // Habilitar botão de download
-        const btnBaixar = document.getElementById('baixarImagem');
-        if (btnBaixar) {
-            btnBaixar.disabled = false;
-        }
-    };
-    
-    img.onerror = function() {
-        console.error('❌ Erro ao carregar imagem');
-        URL.revokeObjectURL(imagemURL);
-    };
-    
-    // Iniciar carregamento
-    img.src = imagemURL;
-}
-
-// ============================================================================
-// CORREÇÃO: ATUALIZAR INTERFACE (versículo já funciona, mas vamos garantir)
-// ============================================================================
-
-function atualizarInterface() {
-    if (!versiculoAtual) {
-        console.error('❌ Nenhum versículo atual definido');
-        return;
-    }
-    
-    console.log('📝 Atualizando texto do versículo...');
-    
-    // Atualizar texto
-    const elementoTexto = document.getElementById('versiculoTexto');
-    if (elementoTexto) {
-        elementoTexto.textContent = versiculoAtual.texto;
-        elementoTexto.style.opacity = '0';
-        setTimeout(() => {
-            elementoTexto.style.transition = 'opacity 1s';
-            elementoTexto.style.opacity = '1';
-        }, 100);
-        console.log('✅ Texto atualizado');
-    }
-    
-    // Atualizar referência
-    const elementoReferencia = document.getElementById('versiculoReferencia');
-    if (elementoReferencia) {
-        elementoReferencia.textContent = versiculoAtual.referencia;
-        console.log('✅ Referência atualizada');
-    }
-    
-    // Atualizar contador
-    const contador = document.getElementById('contadorVersiculos');
-    if (contador) {
-        const count = parseInt(contador.textContent || '0') + 1;
-        contador.textContent = count;
-        console.log(`✅ Contador: ${count}`);
-    }
-}
-
-// ============================================================================
-// CORREÇÃO: FUNÇÃO DE DOWNLOAD DO CANVAS
-// ============================================================================
-
-function baixarImagem() {
-    const canvas = document.getElementById('canvasImagem');
-    
-    if (!canvas || canvas.tagName !== 'CANVAS') {
-        console.error('❌ Canvas não encontrado para download');
-        return;
-    }
-    
-    // Converter canvas para blob
-    canvas.toBlob(function(blob) {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.download = `versiculo_${Date.now()}.png`;
-        link.href = url;
-        link.click();
-        
-        // Limpar URL
-        setTimeout(() => URL.revokeObjectURL(url), 100);
-        
-        console.log('⬇️ Download iniciado');
-        mostrarToast('Download iniciado!', 'success');
-    }, 'image/png');
-}
-
-// ============================================================================
-// ADICIONAR: FUNÇÃO PARA ADICIONAR TEXTO NO CANVAS (OPCIONAL)
-// ============================================================================
-
-function adicionarTextoNoCanvas() {
-    if (!versiculoAtual) return;
-    
-    const canvas = document.getElementById('canvasImagem');
-    if (!canvas || canvas.tagName !== 'CANVAS') return;
-    
-    const ctx = canvas.getContext('2d');
-    const posicao = document.getElementById('posicaoTexto')?.value || 'bottom';
-    
-    // Configurar fonte
-    ctx.font = 'bold 24px Arial';
-    ctx.fillStyle = 'white';
-    ctx.strokeStyle = 'black';
-    ctx.lineWidth = 3;
-    ctx.textAlign = 'center';
-    
-    // Calcular posição
-    const x = canvas.width / 2;
-    let y;
-    
-    switch(posicao) {
-        case 'top':
-            y = 50;
-            break;
-        case 'center':
-            y = canvas.height / 2;
-            break;
-        case 'bottom':
-        default:
-            y = canvas.height - 50;
-            break;
-    }
-    
-    // Desenhar texto com contorno
-    ctx.strokeText(versiculoAtual.texto, x, y);
-    ctx.fillText(versiculoAtual.texto, x, y);
-    
-    // Adicionar referência menor
-    ctx.font = 'italic 18px Arial';
-    ctx.strokeText(versiculoAtual.referencia, x, y + 30);
-    ctx.fillText(versiculoAtual.referencia, x, y + 30);
-    
-    console.log('📝 Texto adicionado ao canvas');
-}
-
-// ============================================================================
-// CORREÇÃO: CONFIGURAR EVENTOS CORRETAMENTE
-// ============================================================================
-
-function configurarEventos() {
-    console.log('⚙️ Configurando eventos...');
-    
-    // Botão gerar versículo
     const btnGerar = document.getElementById('gerarVersiculo');
     if (btnGerar) {
         btnGerar.addEventListener('click', async () => {
@@ -1350,72 +1201,184 @@ function configurarEventos() {
         console.log('✅ Evento: Gerar Versículo configurado');
     }
     
-    // Botão baixar
+    const selectTema = document.getElementById('temaEscolhido');
+    if (selectTema) {
+        selectTema.addEventListener('change', async () => {
+            console.log(`🎯 Tema alterado para: ${selectTema.value}`);
+            await gerarNovoVersiculo();
+        });
+        console.log('✅ Evento: Mudança de Tema configurado');
+    }
+    
+    const selectPosicao = document.getElementById('posicaoTexto');
+    if (selectPosicao) {
+        selectPosicao.addEventListener('change', async () => {
+            console.log('📍 Mudando posição do texto...');
+            if (ultimaImagemBlob) {
+                await exibirImagemComTexto(ultimaImagemBlob);
+            }
+        });
+        console.log('✅ Evento: Posição Texto configurado');
+    }
+    
+    const selectQualidade = document.getElementById('qualidadeImagem');
+    if (selectQualidade) {
+        selectQualidade.addEventListener('change', async () => {
+            console.log('🎨 Mudando qualidade...');
+            if (ultimaImagemBlob) {
+                await exibirImagemComTexto(ultimaImagemBlob);
+            }
+        });
+        console.log('✅ Evento: Qualidade configurado');
+    }
+    
     const btnBaixar = document.getElementById('baixarImagem');
     if (btnBaixar) {
         btnBaixar.addEventListener('click', baixarImagem);
         console.log('✅ Evento: Baixar Imagem configurado');
     }
     
-    // Botão copiar texto
     const btnCopiar = document.getElementById('copiarTexto');
     if (btnCopiar) {
         btnCopiar.addEventListener('click', () => {
             if (versiculoAtual) {
                 const texto = `${versiculoAtual.texto}\n- ${versiculoAtual.referencia}`;
-                navigator.clipboard.writeText(texto).then(() => {
-                    console.log('📋 Texto copiado');
-                    mostrarToast('Texto copiado!', 'success');
-                });
+                copiarTextoParaClipboard(texto);
             }
         });
         console.log('✅ Evento: Copiar Texto configurado');
     }
     
-    // Mudança de posição do texto
-    const selectPosicao = document.getElementById('posicaoTexto');
-    if (selectPosicao) {
-        selectPosicao.addEventListener('change', adicionarTextoNoCanvas);
-        console.log('✅ Evento: Posição Texto configurado');
+    const btnCompartilhar = document.getElementById('compartilhar');
+    if (btnCompartilhar) {
+        btnCompartilhar.addEventListener('click', compartilharVersiculo);
+        console.log('✅ Evento: Compartilhar configurado');
     }
+    
+    // Atalhos de teclado
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            gerarNovoVersiculo();
+        }
+        if (e.key === 's' && e.ctrlKey) {
+            e.preventDefault();
+            baixarImagem();
+        }
+    });
 }
 
-// ============================================================================
-// TESTE MANUAL: Função para testar com uma imagem de exemplo
-// ============================================================================
+// Funções de debug
+function debugElementosDOM() {
+    console.log('🔍 === DEBUG DE ELEMENTOS DOM ===');
+    
+    const todosElementos = document.querySelectorAll('[id]');
+    console.log(`📋 Total de elementos com ID: ${todosElementos.length}`);
+    
+    const relevantes = Array.from(todosElementos).filter(el => {
+        const id = el.id.toLowerCase();
+        return id.includes('versiculo') || 
+               id.includes('texto') || 
+               id.includes('referencia') || 
+               id.includes('imagem') || 
+               id.includes('canvas');
+    });
+    
+    console.log('📝 Elementos relevantes encontrados:');
+    relevantes.forEach(el => {
+        console.log(`  - ID: "${el.id}" | Tag: <${el.tagName.toLowerCase()}> | Classes: "${el.className}"`);
+    });
+    
+    const imagens = document.querySelectorAll('img');
+    console.log(`🖼️ Total de imagens: ${imagens.length}`);
+    
+    return relevantes;
+}
 
+// Teste com imagem de exemplo
 async function testarComImagemExemplo() {
     console.log('🧪 Testando com imagem de exemplo...');
     
-    // Criar um blob de teste com uma imagem simples
-    const response = await fetch('https://picsum.photos/800/600');
-    const blob = await response.blob();
-    
-    // Definir versículo de teste
-    versiculoAtual = {
-        texto: "Este é um teste do sistema",
-        referencia: "Teste 1:1",
-        tema: "teste"
-    };
-    
-    // Atualizar interface
-    atualizarInterface();
-    
-    // Exibir imagem
-    await exibirImagem(blob);
-    
-    console.log('✅ Teste concluído!');
+    try {
+        const response = await fetch('https://picsum.photos/800/600');
+        const blob = await response.blob();
+        
+        versiculoAtual = {
+            texto: "Este é um teste do sistema de geração de imagens com versículos bíblicos",
+            referencia: "Teste 1:1",
+            tema: "teste"
+        };
+        
+        atualizarInterface();
+        await exibirImagemComTexto(blob);
+        
+        console.log('✅ Teste concluído!');
+        return true;
+    } catch (error) {
+        console.error('❌ Erro no teste:', error);
+        return false;
+    }
 }
 
-// Adicionar ao debug functions
+// Inicialização principal
+async function inicializarSistema() {
+    console.log('🔍 INICIANDO SISTEMA...');
+    console.log('✅ Script de Versículos IA v3.2 carregado!');
+    
+    debugElementosDOM();
+    configurarEventos();
+    
+    const chaveValida = await verificarChaveAPI();
+    if (chaveValida) {
+        console.log('🔑 Chave API válida e pronta para uso');
+    } else {
+        console.log('⚠️ Usando apenas APIs gratuitas');
+    }
+    
+    await carregarVersiculos();
+    
+    console.log('📊 Estatísticas:', stats.totalGerado, 'imagens geradas');
+    console.log('🚀 Sistema inicializado completamente!');
+}
+
+// Event listener principal
+document.addEventListener('DOMContentLoaded', inicializarSistema);
+
+// Exportar funções para debug no console
 window.debugFunctions = {
-    ...window.debugFunctions,
+    definirChave: definirChaveManualmente,
+    verificarChave: verificarChaveAPI,
+    gerarVersiculo: gerarNovoVersiculo,
     testarImagem: testarComImagemExemplo,
-    adicionarTexto: adicionarTextoNoCanvas,
-    baixar: baixarImagem
+    adicionarTexto: () => {
+        const canvas = document.getElementById('canvasImagem');
+        if (canvas && versiculoAtual) {
+            const ctx = canvas.getContext('2d');
+            adicionarTextoEleganteNoCanvas(ctx, canvas);
+        }
+    },
+    baixar: baixarImagem,
+    compartilhar: compartilharVersiculo,
+    stats: () => console.table(stats),
+    limparCache: () => {
+        localStorage.clear();
+        console.log('🧹 Cache limpo');
+    },
+    debug: debugElementosDOM,
+    resetar: () => {
+        versiculoAtual = null;
+        ultimaImagemBlob = null;
+        console.log('🔄 Sistema resetado');
+    }
 };
 
-console.log('💡 Use: window.debugFunctions.testarImagem() para testar o canvas');
+console.log('💡 Dica: Use window.debugFunctions para acessar funções de debug');
+console.log('💡 Teste rápido: window.debugFunctions.testarImagem()');
+console.log('💡 Ver estatísticas: window.debugFunctions.stats()');
+
 // ============================================================================
-// FIM DO ARQUIVO SCRIPT.JS
+// FIM PARTE 13: EVENTOS E INICIALIZAÇÃO
+// ============================================================================
+
+// ============================================================================
+// FIM DO ARQUIVO SCRIPT.JS - VERSÃO COMPLETA 3.2
 // ============================================================================
